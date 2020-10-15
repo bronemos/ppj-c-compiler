@@ -181,6 +181,8 @@ print(regex_set)
 # for x in data:
 #     print(x)
 
-# m = Machine('(a|b)*abb')
-# a = convert_expression_to_machine('(a|b)*abb', m)
-# print('{}, {}, {}'.format(a[0], a[1], m.states_number))
+for regex in regex_set:
+    m = Machine(regex)
+    a = convert_expression_to_machine(regex, m)
+    print('{}, {}, {}'.format(a[0], a[1], m.states_number))
+    print('---------------------------------------------------------------')
