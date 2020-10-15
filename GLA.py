@@ -133,6 +133,7 @@ passed = False
 after_whitespace = re.compile('\\s(.*)')
 curly_braces = re.compile('{(.+?)}')
 after_angle_brace = re.compile('>(.*)')
+between_angled_braces = re.compile('<(.+?)>')
 regex_set = set()
 
 # extract regexes into dict
@@ -150,9 +151,12 @@ for x in data:
 
 # replaces regexes
 
+
+all_actions = list() # lista tupleova oblika (stanje, regex, naredbe)
 passed = False
+reading_actions = False
 for idx, x in enumerate(data):
-    if re.search('%X', x):
+    if re.search('%L', x):
         passed = True
     if not passed:
         try:
@@ -163,24 +167,39 @@ for idx, x in enumerate(data):
             pass
 
     elif passed:
-        try:
-            matches = curly_braces.findall(x)
-            for match in matches:
-                x = x.replace(f'{{{match}}}', f'({regexes[match]})')
-            regex_set.add(after_angle_brace.search(x).group(1))
-            data[idx] = x
-        except AttributeError:
-            pass
+        if x == '{':
+            reading_actions = True
+            actions = list()
+            continue
+        elif x == '}':
+            all_actions.append((action_name, regex, ','.join(actions)))
+            reading_actions = False
+            continue
+        if reading_actions:
+            actions.append(x)  # dodaje akciju u listu akcija za stanje
+        else:
+            try:
+                matches = curly_braces.findall(x)
+                action_name = between_angled_braces.search(x).group(1)
+                for match in matches:
+                    x = x.replace(f'{{{match}}}', f'({regexes[match]})')
+                regex = after_angle_brace.search(x).group(1)
+                regex_set.add(regex)
+                data[idx] = x
+            except AttributeError:
+                pass
+print(data)
+print(all_actions) # lista tupleova oblika (stanje, regex, naredbe)
 
 f = open('./analizator/table.txt', 'w')
 for regex in regex_set:
     f.write(regex + '\n')
     m = Machine(regex)
     a = convert_expression_to_machine(regex, m)
-    f.write('{}\n'.format(a[0]))  # beginning state
-    f.write('{}\n'.format(a[1]))  # acceptable state
+    f.write(f'{a[0]}\n')  # beginning state
+    f.write(f'{a[1]}\n')  # acceptable state
     f.write('-' * 80 + '\n')
-# ispisi sve akcije kao stanje_leksora, regex -> naredbe (ako nema naredbe stavi '', poredane kako pise u dokumentu odvojene zarezom)
+# ispisi sve akcije kao stanje_leksera, regex -> naredbe (ako nema naredbe stavi '', poredane kako pise u dokumentu odvojene zarezom)
 f.write('-' * 80 + '\n')
-f.close()
 
+f.close()
