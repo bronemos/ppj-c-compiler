@@ -2,6 +2,12 @@ import sys
 import re
 
 
+class Machine:
+    def __init__(self, name):
+        self.name = name
+        self.states_number = 0
+
+
 def new_state(machine):
     machine.states_number = machine.states_number + 1
     return machine.states_number - 1
@@ -118,14 +124,6 @@ def convert_expression_to_machine(expression, machine):
     return left_state, right_state
 
 
-class Machine:
-    def __init__(self, name):
-        self.name = name
-        self.states_number = 0
-
-
-# akcije u dict: key: (ime automata (regex), stanje leksera) value: akcija
-
 std_input = sys.stdin.readlines()
 data = [x.strip() for x in std_input]
 regexes = dict()
@@ -152,7 +150,7 @@ for x in data:
 # replaces regexes
 
 
-all_actions = list() # lista tupleova oblika (stanje, regex, naredbe)
+all_actions = dict()  # dict - kljuc tuple (regex, stanje) value: akcije
 passed = False
 reading_actions = False
 for idx, x in enumerate(data):
@@ -172,7 +170,7 @@ for idx, x in enumerate(data):
             actions = list()
             continue
         elif x == '}':
-            all_actions.append((action_name, regex, ','.join(actions)))
+            all_actions[(action_name, regex)] = ','.join(actions)
             reading_actions = False
             continue
         if reading_actions:
@@ -189,7 +187,7 @@ for idx, x in enumerate(data):
             except AttributeError:
                 pass
 print(data)
-print(all_actions) # lista tupleova oblika (stanje, regex, naredbe)
+print(all_actions)
 
 f = open('./analizator/table.txt', 'w')
 for regex in regex_set:
@@ -199,7 +197,6 @@ for regex in regex_set:
     f.write(f'{a[0]}\n')  # beginning state
     f.write(f'{a[1]}\n')  # acceptable state
     f.write('-' * 80 + '\n')
-# ispisi sve akcije kao stanje_leksera, regex -> naredbe (ako nema naredbe stavi '', poredane kako pise u dokumentu odvojene zarezom)
 f.write('-' * 80 + '\n')
 
 f.close()
