@@ -25,20 +25,20 @@ def convert_expression_to_machine(expression, machine):
         elif expression[i] == ')' and is_operator(expression, i):
             brackets_num = brackets_num - 1
         elif brackets_num == 0 and expression[i] == '|' and is_operator(expression, i):
-            choices += expression[last_choice_operator_index + 1: i]
+            choices += [expression[last_choice_operator_index + 1: i]]
             last_choice_operator_index = i
             # grupiraj lijevi negrupirani dio niza znakova expression u niz izbori
 
     left_state = new_state(machine)
     right_state = new_state(machine)
     if last_choice_operator_index != -1:
-        choices += expression[last_choice_operator_index + 1:]
+        choices += [expression[last_choice_operator_index + 1:]]
         for i in range(0, len(choices)):
             temporary = convert_expression_to_machine(choices[i], machine)
             # dodaj_epsilon_prijelaz(machine, left_state, temporary[0])
-            print('{},$->{}'.format(left_state, temporary[0]))
+            f.write('{},$->{}\n'.format(left_state, temporary[0]))
             # dodaj_epsilon_prijelaz(machine, temporary[1], right_state)
-            print('{},$->{}'.format(temporary[1], right_state))
+            f.write('{},$->{}\n'.format(temporary[1], right_state))
 
     else:
         prefixed = False
@@ -50,7 +50,7 @@ def convert_expression_to_machine(expression, machine):
                 if expression[i] == 't':
                     transition_char = '\t'
                 elif expression[i] == 'n':
-                    transition_char = '\n'
+                    transition_char = '\\n'
                 elif expression[i] == '_':
                     transition_char = ' '
                 else:
@@ -59,20 +59,21 @@ def convert_expression_to_machine(expression, machine):
                 a = new_state(machine)
                 b = new_state(machine)
                 # dodaj_prijelaz(machine, a, b, transition_char)
-                print('{},{}->{}'.format(a, transition_char, b))
+                f.write('{},{}->{}\n'.format(a, transition_char, b))
             else:
                 if expression[i] == '\\':
                     prefixed = True
+                    i += 1
                     continue
                 if expression[i] != '(':
                     a = new_state(machine)
                     b = new_state(machine)
                     if expression[i] == '$':
                         # dodaj_epsilon_prijelaz(machine, a, b)
-                        print('{},{}->{}'.format(a, '$', b))
+                        f.write('{},{}->{}\n'.format(a, '$', b))
                     else:
                         # dodaj_prijelaz(machine, a, b, expression[i])
-                        print('{},{}->{}'.format(a, expression[i], b))
+                        f.write('{},{}->{}\n'.format(a, expression[i], b))
                 else:
                     # *pronađi odgovarajuću zatvorenu zagradu*
                     brackets_num = 1
@@ -97,22 +98,22 @@ def convert_expression_to_machine(expression, machine):
                 a = new_state(machine)
                 b = new_state(machine)
                 # dodaj_epsilon_prijelaz(machine, a, x)
-                print('{},{}->{}'.format(a, '$', x))
+                f.write('{},{}->{}\n'.format(a, '$', x))
                 # dodaj_epsilon_prijelaz(machine, y, b)
-                print('{},{}->{}'.format(y, '$', b))
+                f.write('{},{}->{}\n'.format(y, '$', b))
                 # dodaj_epsilon_prijelaz(machine, a, b)
-                print('{},{}->{}'.format(a, '$', b))
+                f.write('{},{}->{}\n'.format(a, '$', b))
                 # dodaj_epsilon_prijelaz(machine, y, x)
-                print('{},{}->{}'.format(y, '$', x))
+                f.write('{},{}->{}\n'.format(y, '$', x))
                 i = i + 1
 
             # connect to the machine
             # dodaj_epsilon_prijelaz(machine, last_state, a)
-            print('{},{}->{}'.format(last_state, '$', a))
+            f.write('{},{}->{}\n'.format(last_state, '$', a))
             last_state = b
             i += 1
         # dodaj_epsilon_prijelaz(machine, last_state, right_state)
-        print('{},{}->{}'.format(last_state, '$', right_state))
+        f.write('{},{}->{}\n'.format(last_state, '$', right_state))
 
     return left_state, right_state
 
@@ -122,12 +123,6 @@ class Machine:
         self.name = name
         self.states_number = 0
 
-
-# filtriramo regexe
-# for petlja po svim regexima
-# pozove se convert_expression_to_machine za expression (on odmah pise u datoteku)
-# nakon svih prijelaza napise se prvo pocetno pa prihvatljivo stanje u datoteku
-# u datoteku se upise i ime automata (regex) da bi se moglo prepoznati kojem automatu pripada akcija
 
 # akcije u dict: key: (ime automata (regex), stanje leksera) value: akcija
 
@@ -177,12 +172,15 @@ for idx, x in enumerate(data):
         except AttributeError:
             pass
 
-print(regex_set)
-# for x in data:
-#     print(x)
-
+f = open('./analizator/table.txt', 'w')
 for regex in regex_set:
+    f.write(regex + '\n')
     m = Machine(regex)
     a = convert_expression_to_machine(regex, m)
-    print('{}, {}, {}'.format(a[0], a[1], m.states_number))
-    print('---------------------------------------------------------------')
+    f.write('{}\n'.format(a[0]))  # beginning state
+    f.write('{}\n'.format(a[1]))  # acceptable state
+    f.write('-' * 80 + '\n')
+# ispisi sve akcije kao stanje_leksora, regex -> naredbe (ako nema naredbe stavi '', poredane kako pise u dokumentu odvojene zarezom)
+f.write('-' * 80 + '\n')
+f.close()
+
