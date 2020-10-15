@@ -137,6 +137,8 @@ regexes = dict()
 passed = False
 after_whitespace = re.compile('\\s(.*)')
 curly_braces = re.compile('{(.+?)}')
+after_angle_brace = re.compile('>(.*)')
+regex_set = set()
 
 # extract regexes into dict
 for x in data:
@@ -169,13 +171,15 @@ for idx, x in enumerate(data):
         try:
             matches = curly_braces.findall(x)
             for match in matches:
-                x = x.replace(f'{{{key}}}', f'({regexes[key]})')
+                x = x.replace(f'{{{match}}}', f'({regexes[match]})')
+            regex_set.add(after_angle_brace.search(x).group(1))
             data[idx] = x
         except AttributeError:
             pass
 
-for x in data:
-    print(x)
+print(regex_set)
+# for x in data:
+#     print(x)
 
 # m = Machine('(a|b)*abb')
 # a = convert_expression_to_machine('(a|b)*abb', m)
