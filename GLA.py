@@ -2,6 +2,12 @@ import sys
 import re
 
 
+class Machine:
+    def __init__(self, name):
+        self.name = name
+        self.states_number = 0
+
+
 def new_state(machine):
     machine.states_number = machine.states_number + 1
     return machine.states_number - 1
@@ -118,14 +124,6 @@ def convert_expression_to_machine(expression, machine):
     return left_state, right_state
 
 
-class Machine:
-    def __init__(self, name):
-        self.name = name
-        self.states_number = 0
-
-
-# akcije u dict: key: (ime automata (regex), stanje leksera) value: akcija
-
 std_input = sys.stdin.readlines()
 data = [x.strip() for x in std_input]
 regexes = dict()
@@ -149,7 +147,6 @@ for x in data:
         pass
 
 # replaces regexes
-
 passed = False
 for idx, x in enumerate(data):
     if re.search('%X', x):
@@ -180,7 +177,9 @@ for regex in regex_set:
     f.write('{}\n'.format(a[0]))  # beginning state
     f.write('{}\n'.format(a[1]))  # acceptable state
     f.write('-' * 80 + '\n')
-# ispisi sve akcije kao stanje_leksora, regex -> naredbe (ako nema naredbe stavi '', poredane kako pise u dokumentu odvojene zarezom)
-f.write('-' * 80 + '\n')
-f.close()
 
+f.write('-' * 80 + '\n')
+# TODO: ispisi sve akcije kao stanje_leksora, regex -> naredbe\
+#  (ako nema naredbe stavi '', poredane kako pise u dokumentu odvojene zarezom)\
+#  akcije u dict: key: (ime automata (regex), stanje leksera) value: naredbe
+f.close()
