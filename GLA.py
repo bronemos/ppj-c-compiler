@@ -148,14 +148,15 @@ for x in data:
         pass
 
 # replaces regexes
-
-
 all_actions = dict()  # dict - kljuc tuple (regex, stanje) value: akcije
 passed = False
 reading_actions = False
+analyzer_starting_state = ''
 for idx, x in enumerate(data):
     if re.search('%L', x):
         passed = True
+    elif re.search('%X', x):
+        analyzer_starting_state = x.split(' ')[1]
     if not passed:
         try:
             former = after_whitespace.search(x).group(1)
@@ -186,17 +187,15 @@ for idx, x in enumerate(data):
                 data[idx] = x
             except AttributeError:
                 pass
-print(data)
-print(all_actions)
 
 f = open('./analizator/table.txt', 'w')
+f.write(f'{analyzer_starting_state}\n')
 for regex in regex_set:
     f.write(regex + '\n')
     m = Machine(regex)
     a = convert_expression_to_machine(regex, m)
-    f.write(f'{a[0]}\n')  # beginning state
-    f.write(f'{a[1]}\n')  # acceptable state
-    f.write('-' * 80 + '\n')
+    f.write(f'start:{a[0]},acceptable:{a[1]}\n')  # start and acceptable state
 f.write('-' * 80 + '\n')
-
+for action in all_actions:
+    f.write(f'{action}:{all_actions.get(action)}\n')
 f.close()
