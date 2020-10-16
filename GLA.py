@@ -1,5 +1,6 @@
 import sys
 import re
+import pickle as serializer
 
 
 class Machine:
@@ -171,7 +172,7 @@ for idx, x in enumerate(data):
             actions = list()
             continue
         elif x == '}':
-            all_actions[(action_name, regex)] = ','.join(actions)
+            all_actions[(action_name, regex)] = actions
             reading_actions = False
             continue
         if reading_actions:
@@ -188,14 +189,23 @@ for idx, x in enumerate(data):
             except AttributeError:
                 pass
 
-f = open('./analizator/table.txt', 'w')
-f.write(f'{analyzer_starting_state}\n')
-for regex in regex_set:
-    f.write(regex + '\n')
-    m = Machine(regex)
-    a = convert_expression_to_machine(regex, m)
-    f.write(f'start:{a[0]},acceptable:{a[1]}\n')  # start and acceptable state
-f.write('-' * 80 + '\n')
-for action in all_actions:
-    f.write(f'{action}:{all_actions.get(action)}\n')
-f.close()
+with open('./analizator/table.txt', 'w') as f:
+    f.write(f'{analyzer_starting_state}\n')
+    for regex in regex_set:
+        f.write(regex + '\n')
+        m = Machine(regex)
+        a = convert_expression_to_machine(regex, m)
+        f.write(f'start:{a[0]},acceptable:{a[1]}\n')  # start and acceptable state
+    f.write('-' * 80 + '\n')
+# for action_name in all_actions:
+#     f.write(f'{action_name[0]}\n')
+#     f.write(f'{action_name[1]}\n')
+#     for action in all_actions.get(action_name):
+#         print(action)
+#         f.write(f'{action}\n')
+#     f.write('\n')
+# f.close()
+
+with open('./analizator/test.txt', 'wb') as f:
+    serializer.dump(all_actions, f)
+

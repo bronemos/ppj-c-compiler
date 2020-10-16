@@ -1,4 +1,5 @@
 import sys
+import pickle as serializer
 
 
 class Machine:
@@ -73,10 +74,9 @@ for i in range(1, len(data)):
 #     print(machine)
 
 # read machines data from table.txt
-actions = {}
-# for i in range(actions_start_index, len(data)):
-#     pass
-#     # TODO: read actions
+# reads actions dict from test.txt
+with open('test.txt', 'rb') as f:
+    actions: dict = serializer.load(f)
 
 # variables taken from book
 start_pointer = 0
@@ -113,8 +113,13 @@ while current_reading_pointer < len(input_stream):
                 if state == machine_list[i].acceptable_state:
                     machine_in_acceptable_state_index_set.add(i)
         # TODO: check which action is first for analyzer_current_state and any of machines in set
+        # trazim u dictionariju par stanje_analizator i ime automata (machine in acceptable state index set je index u listi automata) - machine_list lista automata
         # if action_exists:
         #     last_found_pointer = current_reading_pointer
+        for k, v in actions:
+            for state_idx in machine_in_acceptable_state_index_set:
+                if k == (analyzer_current_state, machine_list[state_idx]):
+                    last_found_pointer = current_reading_pointer
         current_reading_pointer += 1
         current_states = new_states
     else:
