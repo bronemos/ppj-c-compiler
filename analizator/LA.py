@@ -80,7 +80,7 @@ with open('test.txt', 'rb') as f:
 
 # variables taken from book
 start_pointer = 0
-last_found_pointer = 0
+last_found_pointer = -1
 current_reading_pointer = 0
 input_stream = ''.join(sys.stdin.readlines())
 analyzer_current_state = analyzer_starting_state
@@ -95,7 +95,7 @@ for i in range(len(machine_list)):
 starting_states = current_states
 
 action_key = None
-line = 0
+line = 1
 while current_reading_pointer < len(input_stream):
     new_states = [set() for x in range(len(machine_list))]
     new_states_is_empty = True
@@ -108,6 +108,7 @@ while current_reading_pointer < len(input_stream):
                     new_states[i].add(new_state)
         new_states[i] = updateSetE(new_states[i], machine_list[i].transitions)
 
+    machine_in_acceptable_state_index_set = set()
     if not new_states_is_empty:
         # if new states were added check which machines are in acceptable state
         for i in range(len(machine_list)):
@@ -131,7 +132,7 @@ while current_reading_pointer < len(input_stream):
         current_reading_pointer += 1
         current_states = new_states
     if new_states_is_empty or current_reading_pointer == len(input_stream):
-        if start_pointer >= last_found_pointer:
+        if start_pointer > last_found_pointer:
             print(input_stream[start_pointer], file=sys.stderr, end='')
             start_pointer += 1
             current_reading_pointer = start_pointer
@@ -145,16 +146,16 @@ while current_reading_pointer < len(input_stream):
                 elif 'UDJI_U_STANJE' in argument:
                     analyzer_current_state = argument.split(' ')[1]
                 elif 'VRATI_SE' in argument:
-                    number_of_chars = argument.split(' ')[1]
-                if number_of_chars is None:
-                    found_sequence = input_stream[start_pointer: last_found_pointer + 1]
-                    start_pointer = last_found_pointer + 1
-                    current_reading_pointer = start_pointer
-                else:
-                    found_sequence = input_stream[start_pointer: start_pointer + number_of_chars]
-                    start_pointer = start_pointer + number_of_chars
-                    last_found_pointer = start_pointer - 1
-                    current_reading_pointer = start_pointer
-                if action[0] != '-':
-                    print(f'{action[0]} {line} {found_sequence}')
+                    number_of_chars = int(argument.split(' ')[1])
+            if number_of_chars is None:
+                found_sequence = input_stream[start_pointer: last_found_pointer + 1]
+                start_pointer = last_found_pointer + 1
+                current_reading_pointer = start_pointer
+            else:
+                found_sequence = input_stream[start_pointer: start_pointer + number_of_chars]
+                start_pointer = start_pointer + number_of_chars
+                last_found_pointer = start_pointer - 1
+                current_reading_pointer = start_pointer
+            if action[0] != '-':
+                print(f'{action[0]} {line} {found_sequence}')
         current_states = starting_states
