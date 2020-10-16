@@ -116,9 +116,10 @@ while current_reading_pointer < len(input_stream):
         # trazim u dictionariju par stanje_analizator i ime automata (machine in acceptable state index set je index u listi automata) - machine_list lista automata
         # if action_exists:
         #     last_found_pointer = current_reading_pointer
-        for k, v in actions:
+        for k, v in actions.items():
             for state_idx in machine_in_acceptable_state_index_set:
-                if k == (analyzer_current_state, machine_list[state_idx]):
+                if k == (analyzer_current_state, machine_list[state_idx].name):
+                    print('here')
                     last_found_pointer = current_reading_pointer
         current_reading_pointer += 1
         current_states = new_states
