@@ -82,7 +82,7 @@ with open('test.txt', 'rb') as f:
 start_pointer = 0
 last_found_pointer = 0
 current_reading_pointer = 0
-input_stream = '0xaaa'  # ''.join(sys.stdin.readlines())
+input_stream = ''.join(sys.stdin.readlines())
 analyzer_current_state = analyzer_starting_state
 machine_in_acceptable_state_index_set = set()  # set that contains index for every machine that is in acceptable state
 
@@ -94,6 +94,8 @@ for i in range(len(machine_list)):
     current_states[i] = updateSetE(current_states[i], machine_list[i].transitions)
 starting_states = current_states
 
+action_key = None
+line = 0
 while current_reading_pointer < len(input_stream):
     new_states = [set() for x in range(len(machine_list))]
     new_states_is_empty = True
@@ -116,21 +118,43 @@ while current_reading_pointer < len(input_stream):
         # trazim u dictionariju par stanje_analizator i ime automata (machine in acceptable state index set je index u listi automata) - machine_list lista automata
         # if action_exists:
         #     last_found_pointer = current_reading_pointer
+        action_found = False
         for k, v in actions.items():
             for state_idx in machine_in_acceptable_state_index_set:
                 if k == (analyzer_current_state, machine_list[state_idx].name):
-                    print('here')
                     last_found_pointer = current_reading_pointer
+                    action_key = (analyzer_current_state, machine_list[state_idx].name)
+                    action_found = True
+                    break
+            if action_found:
+                break
         current_reading_pointer += 1
         current_states = new_states
-    else:
+    if new_states_is_empty or current_reading_pointer == len(input_stream):
         if start_pointer >= last_found_pointer:
-            print(input_stream[start_pointer], end='')
+            print(input_stream[start_pointer], file=sys.stderr, end='')
             start_pointer += 1
             current_reading_pointer = start_pointer
         else:
-            found_sequence = input_stream[start_pointer: last_found_pointer + 1]
-            # TODO: start action and maybe change pointers below in action
-            start_pointer = last_found_pointer + 1
-            current_reading_pointer = start_pointer
+            action = actions.get(action_key)
+            number_of_chars = None
+            current_line = line
+            for argument in action:
+                if argument == 'NOVI_REDAK':
+                    line += 1
+                elif 'UDJI_U_STANJE' in argument:
+                    analyzer_current_state = argument.split(' ')[1]
+                elif 'VRATI_SE' in argument:
+                    number_of_chars = argument.split(' ')[1]
+                if number_of_chars is None:
+                    found_sequence = input_stream[start_pointer: last_found_pointer + 1]
+                    start_pointer = last_found_pointer + 1
+                    current_reading_pointer = start_pointer
+                else:
+                    found_sequence = input_stream[start_pointer: start_pointer + number_of_chars]
+                    start_pointer = start_pointer + number_of_chars
+                    last_found_pointer = start_pointer - 1
+                    current_reading_pointer = start_pointer
+                if action[0] != '-':
+                    print(f'{action[0]} {line} {found_sequence}')
         current_states = starting_states
