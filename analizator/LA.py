@@ -21,15 +21,12 @@ def updateSetE(states_set, transitions):
             break
         state = helper_list[index]
         if (state, '$') in transitions:
-            for newState in transitions[(state, '$')]:
-                wasInSet = newState in states_set
-                if not wasInSet:
-                    states_set.add(newState)
-                    helper_list.append(newState)
+            for new_state in transitions[(state, '$')]:
+                was_in_set = new_state in states_set
+                if not was_in_set:
+                    states_set.add(new_state)
+                    helper_list.append(new_state)
         index += 1
-    states_set.discard('#')
-    if len(states_set) == 0:
-        states_set.add('#')
     return states_set
 
 
@@ -97,6 +94,7 @@ starting_states = current_states
 action_key = None
 line = 1
 while current_reading_pointer < len(input_stream):
+    current_char = input_stream[current_reading_pointer]
     new_states = [set() for x in range(len(machine_list))]
     new_states_is_empty = True
 
