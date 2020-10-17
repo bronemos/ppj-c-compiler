@@ -55,7 +55,8 @@ for i in range(1, len(data)):
         machine_list.append(Machine(machine_name, start_state, acceptable_state, transitions))
     else:
         current_state = data[i].split('->')[0].split(',')[0]
-        input_char = data[i].split('->')[0].split(',')[1]
+        input_char_idx = data[i].split('->')[0].find(',') + 1
+        input_char = data[i].split('->')[0][input_char_idx]
         if input_char == '\\n':  # change //n to /n
             input_char = '\n'
         key = (current_state, input_char)
