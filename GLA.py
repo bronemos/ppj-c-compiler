@@ -60,6 +60,8 @@ def convert_expression_to_machine(expression, machine):
                     transition_char = '\\n'
                 elif expression[i] == '_':
                     transition_char = ' '
+                elif expression[i] == '$':
+                    transition_char = '\$'
                 else:
                     transition_char = expression[i]
 
