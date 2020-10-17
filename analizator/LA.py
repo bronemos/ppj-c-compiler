@@ -10,7 +10,7 @@ class Machine:
         self.transitions = transitions
 
     def __str__(self):
-        return f'name: {self.name}\nfirst, acceptable: {self.first}, {self.acceptable}\ntransitions: {self.transitions}'
+        return f'name: {self.name}\nfirst, acceptable: {self.first_state}, {self.acceptable_state}\ntransitions: {self.transitions}'
 
 
 def updateSetE(states_set, transitions):
@@ -56,7 +56,7 @@ for i in range(1, len(data)):
     else:
         current_state = data[i].split('->')[0].split(',')[0]
         input_char_idx = data[i].split('->')[0].find(',') + 1
-        input_char = data[i].split('->')[0][input_char_idx]
+        input_char = data[i].split('->')[0][input_char_idx:]
         if input_char == '\\n':  # change //n to /n
             input_char = '\n'
         key = (current_state, input_char)
