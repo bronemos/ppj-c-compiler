@@ -20,8 +20,8 @@ def updateSetE(states_set, transitions):
         if index > len(helper_list) - 1:
             break
         state = helper_list[index]
-        if (state, '$') in transitions:
-            for new_state in transitions[(state, '$')]:
+        if (state, 'epsilon') in transitions:
+            for new_state in transitions[(state, 'epsilon')]:
                 was_in_set = new_state in states_set
                 if not was_in_set:
                     states_set.add(new_state)
@@ -38,13 +38,9 @@ machine_list = []
 transitions = {}
 next_line_is_name = True
 machine_name = ''
-actions_start_index = 0
 for i in range(1, len(data)):
     data[i] = data[i].rstrip()
-    if data[i] == '-' * 80:
-        actions_start_index = i + 1
-        break  # lines with actions will start from next line
-    elif next_line_is_name:
+    if next_line_is_name:
         next_line_is_name = False
         machine_name = data[i]  # name of machine is equal to regex
         transitions = {}
@@ -66,10 +62,6 @@ for i in range(1, len(data)):
         else:
             transitions[key] = []
             transitions[key].append(nextState)
-
-# check data
-# for machine in machine_list:
-#     print(machine)
 
 # read machines data from table.txt
 # reads actions dict from test.txt

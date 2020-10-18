@@ -43,9 +43,9 @@ def convert_expression_to_machine(expression, machine):
         for i in range(0, len(choices)):
             temporary = convert_expression_to_machine(choices[i], machine)
             # dodaj_epsilon_prijelaz(machine, left_state, temporary[0])
-            f.write('{},$->{}\n'.format(left_state, temporary[0]))
+            f.write('{},{}->{}\n'.format(left_state, 'epsilon', temporary[0]))
             # dodaj_epsilon_prijelaz(machine, temporary[1], right_state)
-            f.write('{},$->{}\n'.format(temporary[1], right_state))
+            f.write('{},{}->{}\n'.format(temporary[1], 'epsilon', right_state))
 
     else:
         prefixed = False
@@ -60,8 +60,6 @@ def convert_expression_to_machine(expression, machine):
                     transition_char = '\\n'
                 elif expression[i] == '_':
                     transition_char = ' '
-                elif expression[i] == '$':
-                    transition_char = '\$'
                 else:
                     transition_char = expression[i]
 
@@ -79,7 +77,7 @@ def convert_expression_to_machine(expression, machine):
                     b = new_state(machine)
                     if expression[i] == '$':
                         # dodaj_epsilon_prijelaz(machine, a, b)
-                        f.write('{},{}->{}\n'.format(a, '$', b))
+                        f.write('{},{}->{}\n'.format(a, 'epsilon', b))
                     else:
                         # dodaj_prijelaz(machine, a, b, expression[i])
                         f.write('{},{}->{}\n'.format(a, expression[i], b))
@@ -107,22 +105,22 @@ def convert_expression_to_machine(expression, machine):
                 a = new_state(machine)
                 b = new_state(machine)
                 # dodaj_epsilon_prijelaz(machine, a, x)
-                f.write('{},{}->{}\n'.format(a, '$', x))
+                f.write('{},{}->{}\n'.format(a, 'epsilon', x))
                 # dodaj_epsilon_prijelaz(machine, y, b)
-                f.write('{},{}->{}\n'.format(y, '$', b))
+                f.write('{},{}->{}\n'.format(y, 'epsilon', b))
                 # dodaj_epsilon_prijelaz(machine, a, b)
-                f.write('{},{}->{}\n'.format(a, '$', b))
+                f.write('{},{}->{}\n'.format(a, 'epsilon', b))
                 # dodaj_epsilon_prijelaz(machine, y, x)
-                f.write('{},{}->{}\n'.format(y, '$', x))
+                f.write('{},{}->{}\n'.format(y, 'epsilon', x))
                 i = i + 1
 
             # connect to the machine
             # dodaj_epsilon_prijelaz(machine, last_state, a)
-            f.write('{},{}->{}\n'.format(last_state, '$', a))
+            f.write('{},{}->{}\n'.format(last_state, 'epsilon', a))
             last_state = b
             i += 1
         # dodaj_epsilon_prijelaz(machine, last_state, right_state)
-        f.write('{},{}->{}\n'.format(last_state, '$', right_state))
+        f.write('{},{}->{}\n'.format(last_state, 'epsilon', right_state))
 
     return left_state, right_state
 
@@ -199,15 +197,6 @@ with open('./analizator/table.txt', 'w') as f:
         m = Machine(regex)
         a = convert_expression_to_machine(regex, m)
         f.write(f'start:{a[0]},acceptable:{a[1]}\n')  # start and acceptable state
-    f.write('-' * 80 + '\n')
-# for action_name in all_actions:
-#     f.write(f'{action_name[0]}\n')
-#     f.write(f'{action_name[1]}\n')
-#     for action in all_actions.get(action_name):
-#         print(action)
-#         f.write(f'{action}\n')
-#     f.write('\n')
-# f.close()
 
 with open('./analizator/test.txt', 'wb') as f:
     serializer.dump(all_actions, f)
