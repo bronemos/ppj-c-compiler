@@ -172,7 +172,8 @@ for idx, x in enumerate(data):
             actions = list()
             continue
         elif x == '}':
-            all_actions[(action_name, regex)] = actions
+            if all_actions.get((action_name, regex)) is None:
+                all_actions[(action_name, regex)] = actions
             reading_actions = False
             continue
         if reading_actions:
