@@ -184,7 +184,8 @@ for idx, x in enumerate(data):
                 matches = curly_braces.findall(x)
                 action_name = between_angled_braces.search(x).group(1)
                 for match in matches:
-                    x = x.replace(f'{{{match}}}', f'({regexes[match]})')
+                    if match in regexes.keys():
+                        x = x.replace(f'{{{match}}}', f'({regexes[match]})')
                 regex = after_angle_brace.search(x).group(1)
                 regex_set.add(regex)
                 data[idx] = x
