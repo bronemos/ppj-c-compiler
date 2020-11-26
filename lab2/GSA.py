@@ -12,17 +12,16 @@ first_state = 'S'
 while first_state in nonterminals:
     first_state += 'S'
 grammar_dict[(first_state, 0)] = [(nonterminals[0], True)]
-print(nonterminals)
 
 index = 1
 for element in data[3:]:
     if element[0] == ' ':
+        grammar_dict[(latest_key, index)] = []
         element = element[1:]
-        grammar_dict[(latest_key, index - 1)].extend(
+        grammar_dict[(latest_key, index)].extend(
             (match.group(1), True) if (match := braces_regex.search(x)) else (x, False) for x in element.split(' '))
+        index += 1
     else:
         latest_key = braces_regex.findall(element)[0]
-        grammar_dict[(latest_key, index)] = []
-        index += 1
 
-print(grammar_dict)
+# print(grammar_dict)
