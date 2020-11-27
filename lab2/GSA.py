@@ -1,5 +1,6 @@
 import re
 import sys
+from copy import deepcopy
 
 braces_regex = re.compile('\<(.+)\>')
 
@@ -13,15 +14,62 @@ while first_state in nonterminals:
     first_state += 'S'
 grammar_dict[(first_state, 0)] = [(nonterminals[0], True)]
 
-index = 1
+index = 0
 for element in data[3:]:
     if element[0] == ' ':
-        grammar_dict[(latest_key, index)] = []
-        element = element[1:]
-        grammar_dict[(latest_key, index)].extend(
-            (match.group(1), True) if (match := braces_regex.search(x)) else (x, False) for x in element.split(' '))
-        index += 1
+        grammar_dict[(latest_key, index := index + 1)] = [
+            (match.group(1), True) if (match := braces_regex.search(x)) else (x, False)
+            for x in element[1:].split(' ')]
     else:
         latest_key = braces_regex.findall(element)[0]
 
-# print(grammar_dict)
+# finds all void nonterminals
+
+void_nonterminals = set()
+for key in grammar_dict:
+    if ('$', False) in grammar_dict[key]:
+        void_nonterminals.add((key[0], True))
+while True:
+    new_void_nonterminals = set(void_nonterminals)
+    for left, right in grammar_dict.items():
+        all_void = True
+        for symbol in right:
+            if symbol not in void_nonterminals:
+                all_void = False
+        if all_void:
+            new_void_nonterminals.add((left[0], True))
+    if len(new_void_nonterminals - void_nonterminals) == 0:
+        break
+    void_nonterminals = void_nonterminals | new_void_nonterminals
+
+# creates begin_directly dict: key represents a state, value is set of symbols with which the key begins directly
+begins_directly = dict()
+for left, right in grammar_dict.items():
+    if begins_directly.get(left[0]) is None:
+        begins_directly[left[0]] = set()
+    if right[0] != ('$', False):
+        begins_directly[left[0]].add(right[0])
+    for symbol in right:
+        if symbol not in void_nonterminals and symbol != ('$', False):
+            begins_directly[left[0]].add(symbol)
+            break
+
+# creates begins set by transitively checking begin_directly set
+begins = deepcopy(begins_directly)
+
+for key in begins_directly:
+    begins[key].add((key, True))
+
+change_occurred = True
+while change_occurred:
+    for key in begins_directly:
+        for symbol in begins_directly[key]:
+            if symbol[1] and begins_directly.get(symbol[0]) is not None:
+                for transitive_symbol in begins_directly[symbol[0]]:
+                    begins[key].add(transitive_symbol)
+    if begins == begins_directly:
+        change_occurred = False
+    else:
+        begins_directly = deepcopy(begins)
+
+print(begins)
