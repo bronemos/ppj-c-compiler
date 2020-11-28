@@ -92,8 +92,8 @@ while len(nonterminals_to_process) > 0:
         print(current_nonterminal[0][1])
         print(current_nonterminal[1])
         print(production[index])
-        enka_dict[(current_nonterminal[0][1], list(current_nonterminal[1]), index, symbol)] \
-            = (current_nonterminal[0][1], list(current_nonterminal[1]), index + 1)
+        enka_dict[(current_nonterminal[0][1], frozenset(current_nonterminal[1]), index, symbol)] \
+            = (current_nonterminal[0][1], frozenset(current_nonterminal[1]), index + 1)
         print(symbol)
         print(index)
 
