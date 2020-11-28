@@ -112,13 +112,13 @@ while len(nonterminals_to_process) > 0:
                     enka_dict_key = ((current_nonterminal[0]), frozenset(current_nonterminal[1]), index, ('$', False))
                     if last:
                         enka_dict[enka_dict_key].add((key, frozenset(current_nonterminal[1]), 0))
-                    else:
+                    elif production[index + 1][1]:
                         enka_dict[enka_dict_key].add(
                             (key, frozenset(current_nonterminal[1] | begins[production[index + 1][0]]), 0))
                     if (key, current_nonterminal[1]) not in processed_nonterminals:
                         if last:
                             nonterminals_to_process.append((key, frozenset(current_nonterminal[1])))
-                        else:
+                        elif production[index + 1][1]:
                             nonterminals_to_process.append(
                                 (key, frozenset(current_nonterminal[1] | begins[production[index + 1][0]])))
 
