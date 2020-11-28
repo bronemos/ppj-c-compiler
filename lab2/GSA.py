@@ -1,6 +1,7 @@
 import re
 import sys
 from copy import deepcopy
+from collections import defaultdict
 
 braces_regex = re.compile('\<(.+)\>')
 
@@ -73,27 +74,46 @@ while True:
     else:
         begins_directly = deepcopy(begins)
 
-# print(begins)
+# remove nonterminals from begins
+for k, v in begins.items():
+    remove_set = set()
+    for symbol in v:
+        if symbol[1]:
+            remove_set.add(symbol)
+    begins[k] -= remove_set
+
+print(begins)
 
 sequence_end = '_|_'
 last_point_index = -1  # easier to check for reduction later
-enka_dict = {}  # (production_index, after_set, point_index, input_symbol) -> (production_index, after_set, point_index)
+enka_dict = defaultdict(set)  # (production_index, after_set, point_index, input_symbol)
+# -> (production_index, after_set, point_index)
 # create epsilon nka
 change_occurred = True
 after_set = {sequence_end}
 nonterminals_to_process = [((first_state, 0), after_set)]
-print(nonterminals_to_process[0])
+processed_nonterminals = list()
 
 while len(nonterminals_to_process) > 0:
-    # TODO: check whether the state already exists
     current_nonterminal = nonterminals_to_process.pop(0)
+    processed_nonterminals.append(current_nonterminal)
     production = grammar_dict.get(current_nonterminal[0])
     for index, symbol in enumerate(production):
-        print(current_nonterminal[0][1])
-        print(current_nonterminal[1])
-        print(production[index])
-        enka_dict[(current_nonterminal[0][1], frozenset(current_nonterminal[1]), index, symbol)] \
-            = (current_nonterminal[0][1], frozenset(current_nonterminal[1]), index + 1)
-        print(symbol)
-        print(index)
+        last = False
+        try:
+            production[index + 1]
+        except IndexError:
+            last = True
+        enka_dict[(current_nonterminal[0], frozenset(current_nonterminal[1]), index, symbol)] \
+            .add((current_nonterminal[0], frozenset(current_nonterminal[1]), -1 if last else index + 1))
+        if production[index][1]:
+            for key in grammar_dict:
+                if key[0] == production[index][0]:
+                    enka_dict_key = ((current_nonterminal[0]), frozenset(current_nonterminal[1]), index, ('$', False))
+                    enka_dict[enka_dict_key].add((key, frozenset(current_nonterminal[1]), 0))
+                    if (key, current_nonterminal[1]) not in processed_nonterminals:
+                        nonterminals_to_process.append((key, frozenset(current_nonterminal[1])))
 
+print(10 * '--')
+for k, v in enka_dict.items():
+    print(k, ':', v)
