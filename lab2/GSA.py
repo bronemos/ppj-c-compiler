@@ -60,16 +60,16 @@ begins = deepcopy(begins_directly)
 
 for key in begins_directly:
     begins[key].add((key, True))
+begins_directly = deepcopy(begins)
 
-change_occurred = True
-while change_occurred:
+while True:
     for key in begins_directly:
         for symbol in begins_directly[key]:
             if symbol[1] and begins_directly.get(symbol[0]) is not None:
                 for transitive_symbol in begins_directly[symbol[0]]:
                     begins[key].add(transitive_symbol)
     if begins == begins_directly:
-        change_occurred = False
+        break
     else:
         begins_directly = deepcopy(begins)
 
@@ -86,14 +86,14 @@ print(nonterminals_to_process[0])
 
 while len(nonterminals_to_process) > 0:
     # TODO: check whether the state already exists
-    current_nonterminal = nonterminals_to_process[0]
+    current_nonterminal = nonterminals_to_process.pop(0)
     production = grammar_dict.get(current_nonterminal[0])
     for index, symbol in enumerate(production):
         print(current_nonterminal[0][1])
         print(current_nonterminal[1])
         print(production[index])
-        enka_dict[(current_nonterminal[0][1], list(current_nonterminal[1]), index, production[index])] \
+        enka_dict[(current_nonterminal[0][1], list(current_nonterminal[1]), index, symbol)] \
             = (current_nonterminal[0][1], list(current_nonterminal[1]), index + 1)
         print(symbol)
         print(index)
-    nonterminals_to_process.pop(0)
+
