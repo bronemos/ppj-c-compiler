@@ -23,6 +23,7 @@ for element in data[3:]:
     else:
         latest_key = braces_regex.findall(element)[0]
 
+print(grammar_dict)
 # finds all void nonterminals
 
 void_nonterminals = set()
@@ -72,4 +73,27 @@ while change_occurred:
     else:
         begins_directly = deepcopy(begins)
 
-print(begins)
+# print(begins)
+
+sequence_end = '_|_'
+last_point_index = -1  # easier to check for reduction later
+enka_dict = {}  # (production_index, after_set, point_index, input_symbol) -> (production_index, after_set, point_index)
+# create epsilon nka
+change_occurred = True
+after_set = {sequence_end}
+nonterminals_to_process = [((first_state, 0), after_set)]
+print(nonterminals_to_process[0])
+
+while len(nonterminals_to_process) > 0:
+    # TODO: check whether the state already exists
+    current_nonterminal = nonterminals_to_process[0]
+    production = grammar_dict.get(current_nonterminal[0])
+    for index, symbol in enumerate(production):
+        print(current_nonterminal[0][1])
+        print(current_nonterminal[1])
+        print(production[index])
+        enka_dict[(current_nonterminal[0][1], list(current_nonterminal[1]), index, production[index])] \
+            = (current_nonterminal[0][1], list(current_nonterminal[1]), index + 1)
+        print(symbol)
+        print(index)
+    nonterminals_to_process.pop(0)
