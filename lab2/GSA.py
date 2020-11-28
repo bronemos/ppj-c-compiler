@@ -110,9 +110,17 @@ while len(nonterminals_to_process) > 0:
             for key in grammar_dict:
                 if key[0] == production[index][0]:
                     enka_dict_key = ((current_nonterminal[0]), frozenset(current_nonterminal[1]), index, ('$', False))
-                    enka_dict[enka_dict_key].add((key, frozenset(current_nonterminal[1]), 0))
+                    if last:
+                        enka_dict[enka_dict_key].add((key, frozenset(current_nonterminal[1]), 0))
+                    else:
+                        enka_dict[enka_dict_key].add(
+                            (key, frozenset(current_nonterminal[1] | begins[production[index + 1][0]]), 0))
                     if (key, current_nonterminal[1]) not in processed_nonterminals:
-                        nonterminals_to_process.append((key, frozenset(current_nonterminal[1])))
+                        if last:
+                            nonterminals_to_process.append((key, frozenset(current_nonterminal[1])))
+                        else:
+                            nonterminals_to_process.append(
+                                (key, frozenset(current_nonterminal[1] | begins[production[index + 1][0]])))
 
 print(10 * '--')
 for k, v in enka_dict.items():
