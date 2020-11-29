@@ -10,6 +10,7 @@ data = [x.rstrip() for x in sys.stdin.readlines()]
 # dict containing tuples, (value, bool) - bool value determines whether the symbol is terminal (True) or nonterminal (False)
 grammar_dict = dict()
 nonterminals = [braces_regex.search(x).group(1) for x in data[0].split(' ')[1:]]
+terminals = data[1].split(' ')[1:] + ['_|_']
 first_state = 'S'
 while first_state in nonterminals:
     first_state += 'S'
@@ -197,3 +198,19 @@ for k, v in dka_states_dict.items():
 
 # for k, v in dka_dict.items():
 #     print(k, ':', v)
+
+# create tables action and new_state
+# Pomakni/Reduciraj proturjeˇcje izgradeni generator treba razrijeˇsiti u korist akcije Pomakni. Reduciraj/Reduciraj
+# proturječje potrebno je razrijeˇsiti u korist one akcije koja reducira produkciju zadanu ranije u Ulaznoj Datoteci
+
+actions = {}  # (0, ('a', False)) -> (1, 'move' or 'reduce', production ('A', 1) -> only needed for reduce)
+new_state = {}  # (0, ('A', True)) -> 4
+for k, v in dka_dict.items():
+    if not k[1][1]:  # transition is for nonterminal, add to action table
+        for nonterminal in nonterminals:
+            if k[1][0] == nonterminal:
+                # provjeri treba li izvsiti akciju pomakni, ako ne pogledaj moze li se reducrati. Uzmi prvu akciju reduciraj
+                pass
+
+    else:  # add to new_state table
+        pass
