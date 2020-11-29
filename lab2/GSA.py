@@ -84,7 +84,7 @@ for k, v in begins.items():
 
 print(begins)
 
-sequence_end = '|'
+sequence_end = {'_|_'}
 last_point_index = -1  # easier to check for reduction later
 enka_dict = defaultdict(set)
 # (production_index, after_set, point_index, input_symbol) -> (production_index, after_set, point_index)
