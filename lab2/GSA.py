@@ -137,7 +137,7 @@ while len(nonterminals_to_process) > 0:
                             after_set = frozenset(production[index + 1][0])
                             enka_dict[enka_dict_key].add((key, after_set, 0))
 
-                    if (key, current_nonterminal[1]) not in processed_nonterminals:
+                    if (key, after_set) not in processed_nonterminals:
                         nonterminals_to_process.append((key, after_set))
 
 print(10 * '--')
