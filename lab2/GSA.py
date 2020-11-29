@@ -84,13 +84,12 @@ for k, v in begins.items():
 
 print(begins)
 
-sequence_end = '_|_'
+sequence_end = '|'
 last_point_index = -1  # easier to check for reduction later
-enka_dict = defaultdict(set)  # (production_index, after_set, point_index, input_symbol)
-# -> (production_index, after_set, point_index)
+enka_dict = defaultdict(set)
+# (production_index, after_set, point_index, input_symbol) -> (production_index, after_set, point_index)
 # create epsilon nka
-change_occurred = True
-after_set = {sequence_end}
+after_set = frozenset(sequence_end)
 nonterminals_to_process = [((first_state, 0), after_set)]
 processed_nonterminals = list()
 
@@ -106,21 +105,40 @@ while len(nonterminals_to_process) > 0:
             last = True
         enka_dict[(current_nonterminal[0], frozenset(current_nonterminal[1]), index, symbol)] \
             .add((current_nonterminal[0], frozenset(current_nonterminal[1]), -1 if last else index + 1))
-        if production[index][1]:
+        if production[index][1]:  # nonterminal is after point
+            enka_dict_key = ((current_nonterminal[0]), frozenset(current_nonterminal[1]), index, ('$', False))
             for key in grammar_dict:
-                if key[0] == production[index][0]:
-                    enka_dict_key = ((current_nonterminal[0]), frozenset(current_nonterminal[1]), index, ('$', False))
+                if key[0] == production[index][0]:  # symbol in grammar dict is equeal to nonterminal after point
                     if last:
-                        enka_dict[enka_dict_key].add((key, frozenset(current_nonterminal[1]), 0))
-                    elif production[index + 1][1]:
-                        enka_dict[enka_dict_key].add(
-                            (key, frozenset(current_nonterminal[1] | begins[production[index + 1][0]]), 0))
+                        after_set = frozenset(current_nonterminal[1])
+                        enka_dict[enka_dict_key].add((key, after_set, 0))
+                    else:  # not last
+                        if production[index + 1][1]:  # next symbol is nonterminal
+                            after_set = set()
+                            in_index = index + 1
+                            while True:
+                                if not production[in_index][1]:  # if next symbol is terminal add it to set and break
+                                    after_set = after_set | production[in_index]
+                                    break
+                                else:
+                                    after_set = after_set | begins[production[in_index][0]]
+                                    if (production[in_index][0], True) in void_nonterminals:
+                                        in_index += 1
+                                        if len(production) <= in_index:
+                                            after_set = after_set | current_nonterminal[1]
+                                            break
+                                    else:
+                                        break
+                            after_set = frozenset(after_set)
+                        else:  # next symbol is terminal
+                            after_set = frozenset(production[index + 1])
+                            enka_dict[enka_dict_key].add((key, after_set, 0))
+                        # treba provjeriti moze li se niz izmedu trenutnog znaka i kraja niza svesti na epsilon
+                        # i samo u tom slucaju dodati current_nonterminal[1] u frozenset
+                        # enka_dict[enka_dict_key].add(
+                        #     (key, frozenset(current_nonterminal[1] | begins[production[index + 1][0]]), 0))
                     if (key, current_nonterminal[1]) not in processed_nonterminals:
-                        if last:
-                            nonterminals_to_process.append((key, frozenset(current_nonterminal[1])))
-                        elif production[index + 1][1]:
-                            nonterminals_to_process.append(
-                                (key, frozenset(current_nonterminal[1] | begins[production[index + 1][0]])))
+                        nonterminals_to_process.append((key, after_set))
 
 print(10 * '--')
 for k, v in enka_dict.items():
