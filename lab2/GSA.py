@@ -134,14 +134,10 @@ while len(nonterminals_to_process) > 0:
                         after_set = frozenset(after_set)
                         enka_dict[enka_dict_key].add((key, after_set, 0))
 
-                    if (key, after_set) not in processed_nonterminals:
+                    if (key, after_set) not in processed_nonterminals and (key, after_set) not in nonterminals_to_process:
                         nonterminals_to_process.append((key, after_set))
 
-for k, v in enka_dict.items():
-    print(k, ':', v)
-
 # create DKA from ENKA
-
 dka_states_dict = defaultdict(set)  # example dka_states_dict[0] = {(('S', 0), {'_|_'}, 0), ...}
 current_state = 0
 # group states
@@ -179,8 +175,8 @@ for k, v in enka_dict.items():
                 current_state += 1  # add counter for next iteration
             dka_states_dict[save_production_in_state].add(next_state_production)
 
-for k, v in dka_states_dict.items():
-    print(k, ':', v)
+# for k, v in dka_states_dict.items():
+#     print(k, ':', v)
 
 # make transitions
 dka_dict = {}  # example 0, ('A', True) -> 1 ===== dka_dict[(0, ('A', True))] = 1
@@ -190,15 +186,11 @@ for k, v in dka_states_dict.items():
             if k1[:3] == production and k1[3:][0][0] != '$':
                 for k2, v2 in dka_states_dict.items():
                     if v1 <= v2:
+                        dka_dict[(k, k1[3:][0])] = k2
                         break
-                dka_dict[(k, k1[3:][0])] = k2
 
-# brojac = 0
-# for k, v in dka_dict.items():
-#     brojac += 1
-#
-# print(f'Broj prijelaza = {brojac}')
 
+print(len(dka_dict))
 # create tables action and new_state
 # Pomakni/Reduciraj proturjeˇcje izgradeni generator treba razrijeˇsiti u korist akcije Pomakni. Reduciraj/Reduciraj
 # proturječje potrebno je razrijeˇsiti u korist one akcije koja reducira produkciju zadanu ranije u Ulaznoj Datoteci
