@@ -155,25 +155,24 @@ for k, v in enka_dict.items():
     else:
         save_production_in_state = current_state
         current_state += 1  # add counter for next iteration
-    dka_states_dict[save_production_in_state].add(state_production)
+        dka_states_dict[save_production_in_state].add(state_production)
 
     if transition_symbol[0] == '$':
         for next_state_production in v:
             dka_states_dict[save_production_in_state].add(next_state_production)
     else:
         for next_state_production in v:
-            production_saved_in_state = None  # in which state (0..n) is production saved
-            for k1, v1 in dka_states_dict.items():
-                if next_state_production in v1:
-                    production_saved_in_state = k1
-                    break
-
-            if production_saved_in_state is not None:  # if production is already saved in some state,add new transition
-                save_production_in_state = production_saved_in_state
-            else:
-                save_production_in_state = current_state
-                current_state += 1  # add counter for next iteration
-            dka_states_dict[save_production_in_state].add(next_state_production)
+            if next_state_production[2] == -1:
+                production_saved_in_state = None  # in which state (0..n) is production saved
+                for k1, v1 in dka_states_dict.items():
+                    if next_state_production in v1:
+                        production_saved_in_state = k1
+                        break
+                if production_saved_in_state is None:
+                    current_state += 1
+                    save_production_in_state = current_state
+                    dka_states_dict[save_production_in_state].add(next_state_production)
+print(len(dka_states_dict))
 
 # for k, v in dka_states_dict.items():
 #     print(k, ':', v)
