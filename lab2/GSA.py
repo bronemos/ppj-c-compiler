@@ -24,7 +24,7 @@ for element in data[3:]:
     else:
         latest_key = braces_regex.findall(element)[0]
 
-print(grammar_dict)
+# print(grammar_dict)
 # finds all void nonterminals
 
 void_nonterminals = set()
@@ -84,8 +84,7 @@ for k, v in begins.items():
 
 for k, v in begins.items():
     begins[k] = {x[0] for x in v}
-
-print(begins)
+# print(begins)
 
 sequence_end = {'_|_'}
 last_point_index = -1  # easier to check for reduction later
@@ -140,6 +139,61 @@ while len(nonterminals_to_process) > 0:
                     if (key, after_set) not in processed_nonterminals:
                         nonterminals_to_process.append((key, after_set))
 
-print(10 * '--')
+# for k, v in enka_dict.items():
+#     print(k, ':', v)
+
+# create DKA from ENKA
+
+dka_states_dict = defaultdict(set)  # example dka_states_dict[0] = {(('S', 0), {'_|_'}, 0), ...}
+current_state = 0
+# group states
 for k, v in enka_dict.items():
-    print(k, ':', v)
+    state_production = k[:3]
+    transition_symbol = k[3:][0]
+    production_saved_in_state = None  # in which state (0..n) is production saved
+    for k1, v1 in dka_states_dict.items():
+        if state_production in v1:
+            production_saved_in_state = k1
+            break
+
+    if production_saved_in_state is not None:  # if production is already saved in some state, add new transition
+        save_production_in_state = production_saved_in_state
+    else:
+        save_production_in_state = current_state
+        current_state += 1  # add counter for next iteration
+    dka_states_dict[save_production_in_state].add(state_production)
+
+    if transition_symbol[0] == '$':
+        for next_state_production in v:
+            dka_states_dict[save_production_in_state].add(next_state_production)
+    else:
+        for next_state_production in v:
+            production_saved_in_state = None  # in which state (0..n) is production saved
+            for k1, v1 in dka_states_dict.items():
+                if next_state_production in v1:
+                    production_saved_in_state = k1
+                    break
+
+            if production_saved_in_state is not None:  # if production is already saved in some state,add new transition
+                save_production_in_state = production_saved_in_state
+            else:
+                save_production_in_state = current_state
+                current_state += 1  # add counter for next iteration
+            dka_states_dict[save_production_in_state].add(next_state_production)
+
+# for k, v in dka_states_dict.items():
+#     print(k, ':', v)
+
+# make transitions
+dka_dict = {}  # example 0, ('A', True) -> 1 ===== dka_dict[(0, ('A', True))] = 1
+for k, v in dka_states_dict.items():
+    for production in v:
+        for k1, v1 in enka_dict.items():
+            if k1[:3] == production and k1[3:][0][0] != '$':
+                for k2, v2 in dka_states_dict.items():
+                    if v1 <= v2:
+                        break
+                dka_dict[(k, k1[3:][0])] = k2
+
+# for k, v in dka_dict.items():
+#     print(k, ':', v)
