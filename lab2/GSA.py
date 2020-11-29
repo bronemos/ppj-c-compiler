@@ -82,6 +82,9 @@ for k, v in begins.items():
             remove_set.add(symbol)
     begins[k] -= remove_set
 
+for k, v in begins.items():
+    begins[k] = {x[0] for x in v}
+
 print(begins)
 
 sequence_end = {'_|_'}
@@ -118,7 +121,7 @@ while len(nonterminals_to_process) > 0:
                             in_index = index + 1
                             while True:
                                 if not production[in_index][1]:  # if next symbol is terminal add it to set and break
-                                    after_set = after_set | production[in_index]
+                                    after_set.add(production[in_index][0])
                                     break
                                 else:
                                     after_set = after_set | begins[production[in_index][0]]
@@ -131,12 +134,9 @@ while len(nonterminals_to_process) > 0:
                                         break
                             after_set = frozenset(after_set)
                         else:  # next symbol is terminal
-                            after_set = frozenset(production[index + 1])
+                            after_set = frozenset(production[index + 1][0])
                             enka_dict[enka_dict_key].add((key, after_set, 0))
-                        # treba provjeriti moze li se niz izmedu trenutnog znaka i kraja niza svesti na epsilon
-                        # i samo u tom slucaju dodati current_nonterminal[1] u frozenset
-                        # enka_dict[enka_dict_key].add(
-                        #     (key, frozenset(current_nonterminal[1] | begins[production[index + 1][0]]), 0))
+
                     if (key, current_nonterminal[1]) not in processed_nonterminals:
                         nonterminals_to_process.append((key, after_set))
 
