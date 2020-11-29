@@ -116,32 +116,29 @@ while len(nonterminals_to_process) > 0:
                         after_set = frozenset(current_nonterminal[1])
                         enka_dict[enka_dict_key].add((key, after_set, 0))
                     else:  # not last
-                        if production[index + 1][1]:  # next symbol is nonterminal
-                            after_set = set()
-                            in_index = index + 1
-                            while True:
-                                if not production[in_index][1]:  # if next symbol is terminal add it to set and break
-                                    after_set.add(production[in_index][0])
-                                    break
-                                else:
-                                    after_set = after_set | begins[production[in_index][0]]
-                                    if (production[in_index][0], True) in void_nonterminals:
-                                        in_index += 1
-                                        if len(production) <= in_index:
-                                            after_set = after_set | current_nonterminal[1]
-                                            break
-                                    else:
+                        after_set = set()
+                        in_index = index + 1
+                        while True:
+                            if not production[in_index][1]:  # if next symbol is terminal add it to set and break
+                                after_set.add(production[in_index][0])
+                                break
+                            else:
+                                after_set = after_set | begins[production[in_index][0]]
+                                if (production[in_index][0], True) in void_nonterminals:
+                                    in_index += 1
+                                    if len(production) <= in_index:
+                                        after_set = after_set | current_nonterminal[1]
                                         break
-                            after_set = frozenset(after_set)
-                        else:  # next symbol is terminal
-                            after_set = frozenset(production[index + 1][0])
-                            enka_dict[enka_dict_key].add((key, after_set, 0))
+                                else:
+                                    break
+                        after_set = frozenset(after_set)
+                        enka_dict[enka_dict_key].add((key, after_set, 0))
 
                     if (key, after_set) not in processed_nonterminals:
                         nonterminals_to_process.append((key, after_set))
 
-# for k, v in enka_dict.items():
-#     print(k, ':', v)
+for k, v in enka_dict.items():
+    print(k, ':', v)
 
 # create DKA from ENKA
 
@@ -182,8 +179,8 @@ for k, v in enka_dict.items():
                 current_state += 1  # add counter for next iteration
             dka_states_dict[save_production_in_state].add(next_state_production)
 
-# for k, v in dka_states_dict.items():
-#     print(k, ':', v)
+for k, v in dka_states_dict.items():
+    print(k, ':', v)
 
 # make transitions
 dka_dict = {}  # example 0, ('A', True) -> 1 ===== dka_dict[(0, ('A', True))] = 1
@@ -196,21 +193,24 @@ for k, v in dka_states_dict.items():
                         break
                 dka_dict[(k, k1[3:][0])] = k2
 
+# brojac = 0
 # for k, v in dka_dict.items():
-#     print(k, ':', v)
+#     brojac += 1
+#
+# print(f'Broj prijelaza = {brojac}')
 
 # create tables action and new_state
 # Pomakni/Reduciraj proturjeˇcje izgradeni generator treba razrijeˇsiti u korist akcije Pomakni. Reduciraj/Reduciraj
 # proturječje potrebno je razrijeˇsiti u korist one akcije koja reducira produkciju zadanu ranije u Ulaznoj Datoteci
 
-actions = {}  # (0, ('a', False)) -> (1, 'move' or 'reduce', production ('A', 1) -> only needed for reduce)
-new_state = {}  # (0, ('A', True)) -> 4
-for k, v in dka_dict.items():
-    if not k[1][1]:  # transition is for nonterminal, add to action table
-        for nonterminal in nonterminals:
-            if k[1][0] == nonterminal:
-                # provjeri treba li izvsiti akciju pomakni, ako ne pogledaj moze li se reducrati. Uzmi prvu akciju reduciraj
-                pass
-
-    else:  # add to new_state table
-        pass
+# actions = {}  # (0, ('a', False)) -> (1, 'move' or 'reduce', production ('A', 1) -> only needed for reduce)
+# new_state = {}  # (0, ('A', True)) -> 4
+# for k, v in dka_dict.items():
+#     if not k[1][1]:  # transition is for nonterminal, add to action table
+#         for nonterminal in nonterminals:
+#             if k[1][0] == nonterminal:
+#                 # provjeri treba li izvsiti akciju pomakni, ako ne pogledaj moze li se reducrati. Uzmi prvu akciju reduciraj
+#                 pass
+#
+#     else:  # add to new_state table
+#         pass
