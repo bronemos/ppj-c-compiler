@@ -137,6 +137,9 @@ while len(nonterminals_to_process) > 0:
                     if (key, after_set) not in processed_nonterminals and (key, after_set) not in nonterminals_to_process:
                         nonterminals_to_process.append((key, after_set))
 
+# for k, v in enka_dict.items():
+#     print(f'{k} : {v}')
+
 nka_states = set()
 for k, v in enka_dict.items():
     nka_states.add(k[:3])
@@ -155,12 +158,15 @@ while len(nka_states) > 0:
         state_to_check_children = group_children_from_states.pop()
         grouped_states.add(state_to_check_children)
         for k, v in enka_dict.items():
-            if state_to_check_children + ('$', False) == k:
+            if (state_to_check_children[0], state_to_check_children[1], state_to_check_children[2], ('$', False)) == k:
                 for child_state in v:
                     if child_state not in group_children_from_states and child_state not in grouped_states:
-                        nka_states.remove(child_state)
-                        group_children_from_states.add(child_state)
-                        print(group_children_from_states)
+                        try:
+                            nka_states.remove(child_state)
+                        except KeyError:
+                            pass
+                        finally:
+                            group_children_from_states.add(child_state)
 
     # dobili smo skup stanja koji je epsilon okruzenje neke produkcije
     superset_from = set()
@@ -182,6 +188,8 @@ while len(nka_states) > 0:
     elif len(superset_from) > 0:
         for key in superset_from:
             del dka_states_dict[key]
+        dka_states_dict[number_of_states] = grouped_states
+        number_of_states += 1
 
 print(len(dka_states_dict))
 
