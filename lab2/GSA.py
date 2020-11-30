@@ -134,7 +134,8 @@ while len(nonterminals_to_process) > 0:
                         after_set = frozenset(after_set)
                         enka_dict[enka_dict_key].add((key, after_set, 0))
 
-                    if (key, after_set) not in processed_nonterminals and (key, after_set) not in nonterminals_to_process:
+                    if (key, after_set) not in processed_nonterminals and (
+                            key, after_set) not in nonterminals_to_process:
                         nonterminals_to_process.append((key, after_set))
 
 # for k, v in enka_dict.items():
@@ -145,53 +146,23 @@ for k, v in enka_dict.items():
     nka_states.add(k[:3])
     nka_states = nka_states | v
 
-# create DKA from ENKA
-dka_states_dict = defaultdict(set)  # example dka_states_dict[0] = {(('S', 0), {'_|_'}, 0), ...}
-number_of_states = 0
-# group states
-while len(nka_states) > 0:
-    state = nka_states.pop()
-    # provjeri sve epsilon prijelaze iz tog stanja u neko drugo, ista stvar za svako njegovo dijete, pop iz seta za sve
-    group_children_from_states = {state}
-    grouped_states = set()
-    while len(group_children_from_states) > 0:
-        state_to_check_children = group_children_from_states.pop()
-        grouped_states.add(state_to_check_children)
-        for k, v in enka_dict.items():
-            if (state_to_check_children[0], state_to_check_children[1], state_to_check_children[2], ('$', False)) == k:
-                for child_state in v:
-                    if child_state not in group_children_from_states and child_state not in grouped_states:
-                        try:
-                            nka_states.remove(child_state)
-                        except KeyError:
-                            pass
-                        finally:
-                            group_children_from_states.add(child_state)
+# create NKA from ENKA
 
-    # dobili smo skup stanja koji je epsilon okruzenje neke produkcije
-    superset_from = set()
-    already_exists = False
-    for k, v in dka_states_dict.items():
-        # ako postoji stanje u dka koje je podskup dobivenom skupu stanja, nadopuni to stanje, tj stavi nadskup unutra
-        if grouped_states > v:
-            already_exists = True
-            superset_from.add(k)
-        # ako postoji stanje u dka koje je nadskup dobivenom skupu stanja, continue while
-        elif grouped_states < v:
-            already_exists = True
-            break
+# nadji epsilon okruzenja svakog stanja
+epsilon_okruzenja = dict()
 
-    # dodaj skup stanja u novo stanje
-    if not already_exists:
-        dka_states_dict[number_of_states] = grouped_states
-        number_of_states += 1
-    elif len(superset_from) > 0:
-        for key in superset_from:
-            del dka_states_dict[key]
-        dka_states_dict[number_of_states] = grouped_states
-        number_of_states += 1
+for k, v in enka_dict.items():
+    if k[3] == ('$', False):
+        epsilon_okruzenja[k[:3]] = v | {k[:3]}
+        while True:
+            old_epsilons = deepcopy(epsilon_okruzenja[k[:3]])
+            for state in old_epsilons:
+                if enka_dict.get(state + (('$', False),)) is not None:
+                    epsilon_okruzenja[k[:3]] |= enka_dict[state + (('$', False),)]
+            if len(epsilon_okruzenja[k[:3]] - old_epsilons) == 0:
+                break
 
-print(len(dka_states_dict))
+exit(0)
 
 for k, v in dka_states_dict.items():
     if len(v) > 1:
@@ -207,7 +178,6 @@ for k, v in dka_states_dict.items():
                     if v1 <= v2:
                         dka_dict[(k, k1[3:][0])] = k2
                         break
-
 
 print(len(dka_dict))
 # create tables action and new_state
