@@ -162,6 +162,16 @@ for k, v in enka_dict.items():
             if len(epsilon_okruzenja[k[:3]] - old_epsilons) == 0:
                 break
 
+enka_dict_copy = deepcopy(enka_dict)
+for k, v in enka_dict_copy.items():
+    if k[3] == ('$', False):
+        enka_dict.pop(k)
+    else:
+        for state in v:
+            if state in epsilon_okruzenja:
+                enka_dict[k] |= epsilon_okruzenja[state]
+
+print(enka_dict)
 exit(0)
 
 for k, v in dka_states_dict.items():
