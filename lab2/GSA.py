@@ -137,45 +137,57 @@ while len(nonterminals_to_process) > 0:
                     if (key, after_set) not in processed_nonterminals and (key, after_set) not in nonterminals_to_process:
                         nonterminals_to_process.append((key, after_set))
 
+nka_states = set()
+for k, v in enka_dict.items():
+    nka_states.add(k[:3])
+    nka_states = nka_states | v
+
 # create DKA from ENKA
 dka_states_dict = defaultdict(set)  # example dka_states_dict[0] = {(('S', 0), {'_|_'}, 0), ...}
-current_state = 0
+number_of_states = 0
 # group states
-for k, v in enka_dict.items():
-    state_production = k[:3]
-    transition_symbol = k[3:][0]
-    production_saved_in_state = None  # in which state (0..n) is production saved
-    for k1, v1 in dka_states_dict.items():
-        if state_production in v1:
-            production_saved_in_state = k1
+while len(nka_states) > 0:
+    state = nka_states.pop()
+    # provjeri sve epsilon prijelaze iz tog stanja u neko drugo, ista stvar za svako njegovo dijete, pop iz seta za sve
+    group_children_from_states = {state}
+    grouped_states = set()
+    while len(group_children_from_states) > 0:
+        state_to_check_children = group_children_from_states.pop()
+        grouped_states.add(state_to_check_children)
+        for k, v in enka_dict.items():
+            if state_to_check_children + ('$', False) == k:
+                for child_state in v:
+                    if child_state not in group_children_from_states and child_state not in grouped_states:
+                        nka_states.remove(child_state)
+                        group_children_from_states.add(child_state)
+                        print(group_children_from_states)
+
+    # dobili smo skup stanja koji je epsilon okruzenje neke produkcije
+    superset_from = set()
+    already_exists = False
+    for k, v in dka_states_dict.items():
+        # ako postoji stanje u dka koje je podskup dobivenom skupu stanja, nadopuni to stanje, tj stavi nadskup unutra
+        if grouped_states > v:
+            already_exists = True
+            superset_from.add(k)
+        # ako postoji stanje u dka koje je nadskup dobivenom skupu stanja, continue while
+        elif grouped_states < v:
+            already_exists = True
             break
 
-    if production_saved_in_state is not None:  # if production is already saved in some state, add new transition
-        save_production_in_state = production_saved_in_state
-    else:
-        save_production_in_state = current_state
-        current_state += 1  # add counter for next iteration
-        dka_states_dict[save_production_in_state].add(state_production)
+    # dodaj skup stanja u novo stanje
+    if not already_exists:
+        dka_states_dict[number_of_states] = grouped_states
+        number_of_states += 1
+    elif len(superset_from) > 0:
+        for key in superset_from:
+            del dka_states_dict[key]
 
-    if transition_symbol[0] == '$':
-        for next_state_production in v:
-            dka_states_dict[save_production_in_state].add(next_state_production)
-    else:
-        for next_state_production in v:
-            if next_state_production[2] == -1:
-                production_saved_in_state = None  # in which state (0..n) is production saved
-                for k1, v1 in dka_states_dict.items():
-                    if next_state_production in v1:
-                        production_saved_in_state = k1
-                        break
-                if production_saved_in_state is None:
-                    current_state += 1
-                    save_production_in_state = current_state
-                    dka_states_dict[save_production_in_state].add(next_state_production)
 print(len(dka_states_dict))
 
-# for k, v in dka_states_dict.items():
-#     print(k, ':', v)
+for k, v in dka_states_dict.items():
+    if len(v) > 1:
+        print(k, ':', v)
 
 # make transitions
 dka_dict = {}  # example 0, ('A', True) -> 1 ===== dka_dict[(0, ('A', True))] = 1
