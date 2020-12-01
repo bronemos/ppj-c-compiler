@@ -140,11 +140,12 @@ while len(nonterminals_to_process) > 0:
                         after_set = frozenset(after_set)
                         enka_dict[enka_dict_key].add((key, after_set, new_state_index))
 
-                    if (key, after_set) not in processed_nonterminals and (key, after_set) not in nonterminals_to_process:
+                    if (key, after_set) not in processed_nonterminals and (
+                            key, after_set) not in nonterminals_to_process:
                         nonterminals_to_process.append((key, after_set))
 
-for k, v in enka_dict.items():
-    print(f'{k} : {v}')
+# for k, v in enka_dict.items():
+#     print(f'{k} : {v}')
 # +++++++++++++++++++++ do ovdje sve radi
 
 # find all enka_states
@@ -172,7 +173,7 @@ for state in enka_states:
     else:
         epsilon_okruzenja[state] = {state}
 
-print(len(epsilon_okruzenja))  # OK
+# print(len(epsilon_okruzenja))  # OK
 
 nka_dict = defaultdict(set)
 for k, v in enka_dict.items():
@@ -182,7 +183,6 @@ for k, v in enka_dict.items():
         for state in v:
             nka_dict[k] |= epsilon_okruzenja[state]
 
-print(len(nka_dict))
 dka_dict = {}
 # example frozenset({produkcije...}), ('A', True) -> frozenset({produkcije...})
 # ===== dka_dict[(frozenset({produkcije...}), ('A', True))] = frozenset({produkcije...})
@@ -206,32 +206,94 @@ while len(states_to_process) > 0:
                         states_to_process.append(states_num)
                 dka_dict[(state_num, k[3])] = state_key_dict_reversed[frozenset(v)]
 
+print(len(state_key_dict))
+# for k, v in state_key_dict.items():
+#     print(k, ':', v)
+#
+# print(10 * '-')
+# for k, v in dka_dict.items():
+#     print(state_key_dict[k[0]], k[1], ':', state_key_dict[v])
+print(len(dka_dict))
 for k, v in dka_dict.items():
     print(k, ':', v)
 
-# make transitions
-# for k, v in dka_states_dict.items():
-#     for production in v:
-#         for k1, v1 in enka_dict.items():
-#             if k1[:3] == production and k1[3:][0][0] != '$':
-#                 for k2, v2 in dka_states_dict.items():
-#                     if v1 <= v2:
-#                         dka_dict[(k, k1[3:][0])] = k2
-#                         break
+exit(0)
 
-# print(len(dka_dict))
-# create tables action and new_state
-# Pomakni/Reduciraj proturjeˇcje izgradeni generator treba razrijeˇsiti u korist akcije Pomakni. Reduciraj/Reduciraj
-# proturječje potrebno je razrijeˇsiti u korist one akcije koja reducira produkciju zadanu ranije u Ulaznoj Datoteci
+#minimize dka (needs adaptation)
+transitions = deepcopy(dka_dict)
 
-# actions = {}  # (0, ('a', False)) -> (1, 'move' or 'reduce', production ('A', 1) -> only needed for reduce)
-# new_state = {}  # (0, ('A', True)) -> 4
-# for k, v in dka_dict.items():
-#     if not k[1][1]:  # transition is for nonterminal, add to action table
-#         for nonterminal in nonterminals:
-#             if k[1][0] == nonterminal:
-#                 # provjeri treba li izvsiti akciju pomakni, ako ne pogledaj moze li se reducrati. Uzmi prvu akciju reduciraj
-#                 pass
-#
-#     else:  # add to new_state table
-#         pass
+
+reachable = set()
+reachable.add(0)
+
+while True:
+    to_update = set()
+    for state in reachable:
+        for symbol in alphabet:
+            to_update.add(transitions.get((state, symbol)))
+    if len(to_update - reachable) == 0:
+        break
+    else:
+        reachable.update(to_update)
+
+# remove unreachable
+for key in list(transitions.keys()):
+    if key[0] not in reachable:
+        transitions.pop(key)
+
+# for state in list(states):
+#     if state not in reachable:
+#         states.remove(state)
+# for state in list(acc_states):
+#     if state not in reachable:
+#         acc_states.remove(state)
+
+# find identical states
+division = set()
+non_acc_states = set()
+for x in states:
+    if x not in acc_states:
+        non_acc_states.add(x)
+division.add(frozenset(non_acc_states))
+division.add(frozenset(acc_states))
+
+# split into groups
+while True:
+    new_division = set()
+
+    for group in division:
+        for p in group:
+            new_group = list()
+            for q in group:
+                every = True
+                for symbol in alphabet:
+                    were_in_one = False
+                    a = transitions.get((p, symbol))
+                    b = transitions.get((q, symbol))
+                    for g in division:
+                        if a in g and b in g:
+                            were_in_one = True
+                    if not were_in_one:
+                        every = False
+
+                if every:
+                    new_group.extend((p, q))
+            new_division.add(frozenset(new_group))
+    if new_division == division:
+        break
+    division = new_division
+
+for group in division:
+    #print(group)
+    for state in list(sorted(group))[1:]:
+        if state == ''.join(beg_state):
+            beg_state = list(sorted(group))[0]
+        if state in states:
+            states.remove(state)
+        if state in acc_states:
+            acc_states.remove(state)
+        for key in list(transitions.keys()):
+            if state in key:
+                transitions.pop(key)
+            if transitions.get(key) == state:
+                transitions.update({key: list(sorted(group))[0]})
