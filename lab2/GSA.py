@@ -320,10 +320,10 @@ for k in dka_state_key_dict.keys():
         elif reduction is not None:
             actions[(k, terminal)] = (False, (reduction[0], True), grammar_dict.get(reduction))
 
-with open('lab2/analizator/new_state.txt', 'wb') as f:
+with open('analizator/new_state.txt', 'wb') as f:
     serializer.dump(new_state, f)
 
-with open('lab2/analizator/actions.txt', 'wb') as f:
+with open('analizator/actions.txt', 'wb') as f:
     serializer.dump(actions, f)
 # print('----------NEW_STATE----------')
 # for k, v in new_state.items():
@@ -334,4 +334,4 @@ with open('lab2/analizator/actions.txt', 'wb') as f:
 #     print(f'{k} : {v}')
 # print(actions)
 
-# print(f'Time: {time.time() -  start_time}')
+print(f'Time: {time.time() -  start_time}')
