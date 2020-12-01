@@ -6,9 +6,7 @@ import time
 import pickle as serializer
 
 start_time = time.time()
-
 braces_regex = re.compile('\<(.+)\>')
-
 data = [x.rstrip() for x in sys.stdin.readlines()]
 
 # dict containing tuples, (value, bool) - bool value determines whether the symbol is terminal (True) or nonterminal (False)
@@ -26,10 +24,9 @@ for element in data[3:]:
             for x in element[1:].split(' ')]
     else:
         latest_key = braces_regex.findall(element)[0]
-
 # print(grammar_dict)
-# finds all void nonterminals
 
+# finds all void nonterminals
 void_nonterminals = set()
 for key in grammar_dict:
     if ('$', False) in grammar_dict[key]:
@@ -90,7 +87,6 @@ for k, v in begins.items():
 # print(begins)
 
 sequence_end = {'#'}
-last_point_index = -1  # easier to check for reduction later
 enka_dict = defaultdict(set)
 # (production_index, after_set, point_index, input_symbol) -> (production_index, after_set, point_index)
 # create epsilon nka
@@ -103,39 +99,30 @@ while len(nonterminals_to_process) > 0:
     processed_nonterminals.append(current_nonterminal)
     production = grammar_dict.get(current_nonterminal[0])
     for index, symbol in enumerate(production):
-        last = False
-        point_on_last_index = False
-        if symbol == ('$', False):
-            point_on_last_index = True
-        try:
-            production[index + 1]
-        except IndexError:
-            last = True
-        if not point_on_last_index:
+        last_symbol = index == len(production) - 1
+        if not symbol == ('$', False):
             enka_dict[(current_nonterminal[0], frozenset(current_nonterminal[1]), index, symbol)] \
-                .add((current_nonterminal[0], frozenset(current_nonterminal[1]), -1 if last else (index + 1)))
+                .add((current_nonterminal[0], frozenset(current_nonterminal[1]), -1 if last_symbol else (index + 1)))
         if production[index][1]:  # nonterminal is after point
             enka_dict_key = ((current_nonterminal[0]), frozenset(current_nonterminal[1]), index, ('$', False))
             for key in grammar_dict:
                 if key[0] == production[index][0]:  # symbol in grammar dict is equeal to nonterminal after point
-                    new_state_index = 0
-                    if grammar_dict[key][0] == ('$', False):
-                        new_state_index = -1
-                    if last:
+                    new_state_index = -1 if grammar_dict[key][0] == ('$', False) else 0
+                    if last_symbol:
                         after_set = frozenset(current_nonterminal[1])
                         enka_dict[enka_dict_key].add((key, after_set, new_state_index))
-                    else:  # not last
+                    else:  # not last_symbol
                         after_set = set()
-                        in_index = index + 1
+                        index_to_check = index + 1
                         while True:
-                            if not production[in_index][1]:  # if next symbol is terminal add it to set and break
-                                after_set.add(production[in_index][0])
+                            if not production[index_to_check][1]:  # if next symbol is terminal add it to set and break
+                                after_set.add(production[index_to_check][0])
                                 break
                             else:
-                                after_set = after_set | begins[production[in_index][0]]
-                                if (production[in_index][0], True) in void_nonterminals:
-                                    in_index += 1
-                                    if len(production) <= in_index:
+                                after_set = after_set | begins[production[index_to_check][0]]
+                                if (production[index_to_check][0], True) in void_nonterminals:
+                                    index_to_check += 1
+                                    if len(production) <= index_to_check:
                                         after_set = after_set | current_nonterminal[1]
                                         break
                                 else:
@@ -149,96 +136,92 @@ while len(nonterminals_to_process) > 0:
 
 # for k, v in enka_dict.items():
 #     print(f'{k} : {v}')
-# +++++++++++++++++++++ do ovdje sve radi
 
 # find all enka_states
-# brojac = 0
+counter = 0
 enka_states = set()
 for k, v in enka_dict.items():
     enka_states.add(k[:3])
     enka_states = enka_states | v
-    # brojac += len(v)
+    counter += len(v)
 
-# print(f'Broj stanja u eNKA: {len(enka_states)}')
-# print(f'Broj prijelaza u eNKA: {brojac}')
+print(f'Broj stanja u eNKA: {len(enka_states)}')
+print(f'Broj prijelaza u eNKA: {counter}')
 
 # create NKA from ENKA
 # nadji epsilon okruzenja svakog stanja
-epsilon_okruzenja = dict()
+epsilon_closures = dict()
 
 for state in enka_states:
     if enka_dict.get(state + (('$', False),)) is not None:
-        epsilon_okruzenja[state] = {state} | enka_dict.get(state + (('$', False),))
+        epsilon_closures[state] = {state} | enka_dict.get(state + (('$', False),))
         while True:
-            old_epsilons = deepcopy(epsilon_okruzenja[state])
+            old_epsilons = deepcopy(epsilon_closures[state])
             for state1 in old_epsilons:
+                if epsilon_closures.get(state1) is not None:
+                    epsilon_closures[state] |= epsilon_closures.get(state1)
+                    continue
                 if enka_dict.get(state1 + (('$', False),)) is not None:
-                    epsilon_okruzenja[state] |= enka_dict[state1 + (('$', False),)]
-            if len(epsilon_okruzenja[state] - old_epsilons) == 0:
+                    epsilon_closures[state] |= enka_dict[state1 + (('$', False),)]
+            if len(epsilon_closures[state] - old_epsilons) == 0:
                 break
     else:
-        epsilon_okruzenja[state] = {state}
+        epsilon_closures[state] = {state}
 
-# print(len(epsilon_okruzenja))  # OK
-
-helper_nka_dict = defaultdict(set)
+nka_transitions = defaultdict(set)
 for k, v in enka_dict.items():
     if k[3] == ('$', False):
         continue
     else:
         for state in v:
-            helper_nka_dict[k] |= epsilon_okruzenja[state]
+            nka_transitions[k] |= epsilon_closures[state]
 
-# print(len(helper_nka_dict))
+# print(len(nka_transitions))
 nka_dict = defaultdict(set)
 # example frozenset({produkcije...}), ('A', True) -> {frozenset({produkcije...}), frozenset()}
 # ===== nka_dict[(frozenset({produkcije...}), ('A', True))] = {frozenset({produkcije...}), fs()}
-state_key_dict = {0: frozenset(epsilon_okruzenja[((first_state, 0), frozenset({'#'}), 0)])}
-state_key_dict_reversed = {frozenset(epsilon_okruzenja[((first_state, 0), frozenset({'#'}), 0)]): 0}
+nka_states = {0: frozenset(epsilon_closures[((first_state, 0), frozenset({'#'}), 0)])}
+nka_states_reversed = {frozenset(epsilon_closures[((first_state, 0), frozenset({'#'}), 0)]): 0}
 states_to_process = [0]
 states_num = 0
-processed_states = []
 while len(states_to_process) > 0:
     state_num = states_to_process.pop(0)
-    processed_states.append(state_num)
-    find_transitions_for = state_key_dict[state_num]
+    find_transitions_for = nka_states[state_num]
     for state in find_transitions_for:
-        for k, v in helper_nka_dict.items():
+        for k, v in nka_transitions.items():
             if k[:3] == state:
-                if not frozenset(v) in state_key_dict.values():
+                if not frozenset(v) in nka_states.values():  # nka_states_reversed.keys()
                     states_num += 1
-                    state_key_dict[states_num] = frozenset(v)
-                    state_key_dict_reversed[frozenset(v)] = states_num
-                    if states_num not in states_to_process and states_num not in processed_states:
-                        states_to_process.append(states_num)
-                nka_dict[(state_num, k[3])].add(state_key_dict_reversed[frozenset(v)])
+                    nka_states[states_num] = frozenset(v)
+                    nka_states_reversed[frozenset(v)] = states_num
+                    states_to_process.append(states_num)
+                nka_dict[(state_num, k[3])].add(nka_states_reversed[frozenset(v)])
 
-# brojac = 0
-# for k, v in nka_dict.items():
-#     brojac += len(v)
-# print(k, ':', v)
-# print(f'Broj stanja u NKA: {len(state_key_dict)}')
-# print(f'Broj prijelaza u NKA: {brojac}')
-# for k, v in state_key_dict.items():
+counter = 0
+for k, v in nka_dict.items():
+    counter += len(v)
+print(f'Broj stanja u NKA: {len(nka_states)}')
+print(f'Broj prijelaza u NKA: {counter}')
+# for k, v in nka_states.items():
 #     print(f'{k} : {v}')
 # print('--' * 10)
 
 state_num = 0
 dka_dict = {}  # 0, a -> 2
-dka_state_key_dict = {}  # 0 -> frozenset()
-dka_state_key_dict_reversed = {}  # frozenset() -> 0
+dka_states = {}  # 0 -> frozenset()
+dka_states_reversed = {}  # frozenset() -> 0
 
 
 # Finally create DKA from NKA
-def addDkaState(snka):
+def add_dka_state(snka):
     global state_num
     global dka_dict
-    global dka_state_key_dict
-    global dka_state_key_dict_reversed
+    global dka_states
+    global dka_states_reversed
     #     ako DKA već sadrži stanje koje odgovara skupu:
     #         vrati to stanje;
-    if dka_state_key_dict_reversed.get(frozenset(snka)) is not None:
-        return dka_state_key_dict_reversed.get(frozenset(snka))
+    if dka_states_reversed.get(frozenset(snka)) is not None:
+        return dka_states_reversed.get(frozenset(snka))
 
     #     prijelazi = nova mapa(znak -> skup stanja NKA);
     transitions = defaultdict(set)  # a -> {1, 3, 5, 7}
@@ -253,35 +236,35 @@ def addDkaState(snka):
 
     #     U DKA stvori novo stanje sdka koje odgovara skupu snka;
     key = state_num
-    dka_state_key_dict[key] = frozenset(snka)
-    dka_state_key_dict_reversed[frozenset(snka)] = key
+    dka_states[key] = frozenset(snka)
+    dka_states_reversed[frozenset(snka)] = key
     state_num += 1
     #
     #     za svaki prijelaz (znak z prelazi u skup stanja NKA p) iz prijelazi:
     #         U DKA dodaj prijelaz iz sdka u dohvatiStanje(p) za znak z;
     for k, v in transitions.items():
-        dka_dict[(key, k)] = addDkaState(v)
+        dka_dict[(key, k)] = add_dka_state(v)
 
     #     Vrati sdka;
     return key
 
 
-addDkaState({0})
+add_dka_state({0})
 
 # for k, v in dka_dict.items():
 #     print(f'{k} : {v}')
-# for k, v in dka_state_key_dict.items():
+# for k, v in dka_states.items():
 #     print(f'{k} : {v}')
-# print(f'Broj stanja u DKA: {len(dka_state_key_dict)}')
-# print(f'Broj prijelaza u DKA: {len(dka_dict)}')
+print(f'Broj stanja u DKA: {len(dka_states)}')
+print(f'Broj prijelaza u DKA: {len(dka_dict)}')
 
 # check productions associated with each state in DKA
 reduction_for_dka_state = {}
 # only reductions are needed here
-for k, v in dka_state_key_dict.items():  # za sva stanja u dka
+for k, v in dka_states.items():  # za sva stanja u dka
     reductions = set()
     for nka_state in v:  # za sva nka stanja koja se nalaze u dka stanju
-        for production in state_key_dict[nka_state]:  # za svaku produkciju koju sadrzi nka stanje
+        for production in nka_states[nka_state]:  # za svaku produkciju koju sadrzi nka stanje
             if production[2] == -1:  # tocka je na kraju
                 reductions.add(production)  # dodaj redukciju u set
     if len(reductions) > 0:
@@ -289,12 +272,10 @@ for k, v in dka_state_key_dict.items():  # za sva stanja u dka
 
 # print(reduction_for_dka_state)
 # create tables action and new_state
-# Pomakni/Reduciraj proturjecje izgradeni generator treba razrijesiti u korist akcije Pomakni. Reduciraj/Reduciraj
-# proturječje potrebno je razrijesiti u korist one akcije koja reducira produkciju zadanu ranije u Ulaznoj Datoteci
 # analizatoru treba proslijediti action, new_state i grammar_dict
 actions = {}  # (0, ('a', False)) -> (1, 'move' == True or 'reduce', production ('A', 1) -> only needed for reduce)
 new_state = {}  # (0, ('A', True)) -> 4
-for k in dka_state_key_dict.keys():
+for k in dka_states.keys():
     # provjeri treba li izvsiti akciju pomakni, ako ne pogledaj moze li se reducrati. Uzmi prvu akciju reduciraj
     for nonterminal in nonterminals:
         if dka_dict.get((k, (nonterminal, True))) is not None:
@@ -320,6 +301,8 @@ for k in dka_state_key_dict.keys():
         elif reduction is not None:
             actions[(k, terminal)] = (False, (reduction[0], True), grammar_dict.get(reduction))
 
+print(f'Time: {time.time() -  start_time}')
+
 with open('lab2/analizator/new_state.txt', 'wb') as f:
     serializer.dump(new_state, f)
 
@@ -333,5 +316,3 @@ with open('lab2/analizator/actions.txt', 'wb') as f:
 # for k, v in actions.items():
 #     print(f'{k} : {v}')
 # print(actions)
-
-# print(f'Time: {time.time() -  start_time}')
