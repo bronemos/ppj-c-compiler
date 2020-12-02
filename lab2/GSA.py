@@ -147,8 +147,8 @@ for k, v in enka_dict.items():
     enka_states = enka_states | v
     counter += len(v)
 
-print(f'Broj stanja u eNKA: {len(enka_states)}')
-print(f'Broj prijelaza u eNKA: {counter}')
+# print(f'Broj stanja u eNKA: {len(enka_states)}')
+# print(f'Broj prijelaza u eNKA: {counter}')
 
 # create NKA from ENKA
 # nadji epsilon okruzenja svakog stanja
@@ -202,8 +202,8 @@ while len(states_to_process) > 0:
 counter = 0
 for k, v in nka_dict.items():
     counter += len(v)
-print(f'Broj stanja u NKA: {len(nka_states)}')
-print(f'Broj prijelaza u NKA: {counter}')
+# print(f'Broj stanja u NKA: {len(nka_states)}')
+# print(f'Broj prijelaza u NKA: {counter}')
 # for k, v in nka_states.items():
 #     print(f'{k} : {v}')
 # print('--' * 10)
@@ -257,8 +257,8 @@ add_dka_state({0})
 #     print(f'{k} : {v}')
 # for k, v in dka_states.items():
 #     print(f'{k} : {v}')
-print(f'Broj stanja u DKA: {len(dka_states)}')
-print(f'Broj prijelaza u DKA: {len(dka_dict)}')
+# print(f'Broj stanja u DKA: {len(dka_states)}')
+# print(f'Broj prijelaza u DKA: {len(dka_dict)}')
 
 # check productions associated with each state in DKA
 reduction_for_dka_state = {}
