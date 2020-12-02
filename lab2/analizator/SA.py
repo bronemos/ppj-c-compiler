@@ -28,7 +28,7 @@ with open('new_state.txt', 'rb') as f:
 with open('synchronization.txt', 'rb') as f:
     synchronization_symbols: list = serializer.load(f)
 
-print(synchronization_symbols)
+# print(synchronization_symbols)
 # print(action)
 
 # input_list - tuple (symbol, row,
@@ -79,8 +79,9 @@ while True:
     elif not action[(current_state, current_symbol[0])][0]:
         children = list()
         for x in reversed(action[(current_state, current_symbol[0])][2]):
-            stack.pop()
-            children.append(stack.pop())
+            if len(stack) > 1:
+                stack.pop()
+                children.append(stack.pop())
         # print(children)
         new_current_state = stack[len(stack) - 1]
         # adds nonterminal to stack
