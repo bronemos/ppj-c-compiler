@@ -13,6 +13,7 @@ data = [x.rstrip() for x in sys.stdin.readlines()]
 grammar_dict = dict()
 nonterminals = [braces_regex.search(x).group(1) for x in data[0].split(' ')[1:]]
 terminals = data[1].split(' ')[1:] + ['#']
+synchronization_symbols = data[2].split(' ')[1:]
 first_state = '%'
 grammar_dict[(first_state, 0)] = [(nonterminals[0], True)]
 
@@ -318,3 +319,4 @@ with open('analizator/actions.txt', 'wb') as f:
 
 print(f'Time: {time.time() -  start_time}')
 
+# print(f'Time: {time.time() -  start_time}')
