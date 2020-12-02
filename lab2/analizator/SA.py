@@ -14,6 +14,8 @@ def dfs_print(root: Node, prefix='', is_root=True):
         if not is_root:
             if root.data[1] is True:
                 print(prefix + '<' + root.data[0] + '>')
+            elif root.data[1] is False:
+                print(prefix + root.data[0])
             else:
                 print(prefix + ' '.join(root.data))
             prefix = prefix + ' '
@@ -33,7 +35,7 @@ with open('synchronization.txt', 'rb') as f:
 
 # input_list - tuple (symbol, row,
 input_list = [(x[0], x[1], ' '.join(x[2:])) for x in [row.strip().split(' ') for row in sys.stdin.readlines()]]
-input_list.append(('#'))
+input_list.append(('#', '', ''))
 # print(input_list)
 # print(f'action: {action}')
 # print(f'new_state: {new_state}')
@@ -53,8 +55,7 @@ while True:
     except KeyError:
         # TODO poboljsati ispis greske, popraviti generativno stablo prilikom greske
         print(f'Error!\n{current_symbol}', file=sys.stderr)
-        current_symbol = input_list.pop(0)
-        while len(input_list) > 0 and input_list[0][0] not in synchronization_symbols:
+        while len(input_list) > 0 and current_symbol[0] not in synchronization_symbols:
             current_symbol = input_list.pop(0)
         # potential issue with stack being empty
         while (current_state, current_symbol[0]) not in action:
@@ -82,6 +83,8 @@ while True:
             if len(stack) > 1:
                 stack.pop()
                 children.append(stack.pop())
+            else:
+                children.append(Node(x))
         # print(children)
         new_current_state = stack[len(stack) - 1]
         # adds nonterminal to stack
@@ -90,10 +93,10 @@ while True:
         stack.append(non_terminal)
         if (new_current_state, action[(current_state, current_symbol[0])][1][0]) != (0, '%'):
             stack.append(new_state[(new_current_state, action[(current_state, current_symbol[0])][1][0])])
-        elif current_symbol[0] == '#':
-            pass
             # print('accepted')
-        # print('reducing')
+    #     print('reducing')
+    # print(current_symbol)
+    # print([x.data if type(x) == Node else x for x in stack])
 # print(stack)
 
 # dfs preorder generative tree
