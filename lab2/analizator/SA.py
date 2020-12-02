@@ -79,25 +79,26 @@ while True:
         # print('moving')
     elif not action[(current_state, current_symbol[0])][0]:
         children = list()
-        for x in reversed(action[(current_state, current_symbol[0])][2]):
-            if len(stack) > 1:
-                stack.pop()
-                children.append(stack.pop())
-            else:
-                children.append(Node(x))
-        # print(children)
+        if action[(current_state, current_symbol[0])][2][0] == ('$', False):
+            children.append(Node(action[(current_state, current_symbol[0])][2][0]))
+        else:
+            for x in reversed(action[(current_state, current_symbol[0])][2]):
+                if len(stack) > 1:
+                    stack.pop()
+                    children.append(stack.pop())
+        # print(f'children {[x.data for x in children]}')
         new_current_state = stack[len(stack) - 1]
         # adds nonterminal to stack
         non_terminal = Node(action[(current_state, current_symbol[0])][1])
+        # print('nonterminal', non_terminal.data)
         non_terminal.children = children[::-1]
         stack.append(non_terminal)
         if (new_current_state, action[(current_state, current_symbol[0])][1][0]) != (0, '%'):
             stack.append(new_state[(new_current_state, action[(current_state, current_symbol[0])][1][0])])
-            # print('accepted')
-    #     print('reducing')
-    # print(current_symbol)
-    # print([x.data if type(x) == Node else x for x in stack])
-# print(stack)
+#         print('reducing')
+#     print(current_symbol)
+#     print([x.data if type(x) == Node else x for x in stack])
+# print(stack[1].data)
 
 # dfs preorder generative tree
 dfs_print(stack[1])
