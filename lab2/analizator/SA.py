@@ -54,7 +54,14 @@ while True:
     try:
         action[(current_state, current_symbol[0])]
     except KeyError:
-        print(f'Error!\n{current_symbol}', file=sys.stderr)
+        expected_symbols = set()
+        for k in action:
+            if k[0] == current_state:
+                expected_symbols.add(k[1])
+        print(f'Error!\n'
+              f'Parsing error in line {current_symbol[1]}\n'
+              f'Expected {", ".join(expected_symbols)}\n'
+              f'Got {current_symbol[0]}', file=sys.stderr)
         while len(input_list) > 0 and current_symbol[0] not in synchronization_symbols:
             current_symbol = input_list.pop(0)
         # potential issue with stack being empty
