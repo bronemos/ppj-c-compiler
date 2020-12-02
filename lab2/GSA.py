@@ -317,6 +317,8 @@ with open('analizator/new_state.txt', 'wb') as f:
 with open('analizator/actions.txt', 'wb') as f:
     serializer.dump(actions, f)
 
-print(f'Time: {time.time() -  start_time}')
+with open('analizator/synchronization.txt', 'wb') as f:
+    serializer.dump(synchronization_symbols, f)
+
 
 # print(f'Time: {time.time() -  start_time}')
