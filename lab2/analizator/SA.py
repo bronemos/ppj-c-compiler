@@ -1,5 +1,6 @@
 import sys
 import pickle as serializer
+from pathlib import Path
 
 
 class Node:
@@ -23,11 +24,11 @@ def dfs_print(root: Node, prefix='', is_root=True):
             dfs_print(child, prefix, is_root=False)
 
 
-with open('actions.txt', 'rb') as f:
+with open(Path(__file__).parent / 'actions.txt', 'rb') as f:
     action: dict = serializer.load(f)
-with open('new_state.txt', 'rb') as f:
+with open(Path(__file__).parent / 'new_state.txt', 'rb') as f:
     new_state: dict = serializer.load(f)
-with open('synchronization.txt', 'rb') as f:
+with open(Path(__file__).parent / 'synchronization.txt', 'rb') as f:
     synchronization_symbols: list = serializer.load(f)
 
 # print(synchronization_symbols)
@@ -53,7 +54,6 @@ while True:
     try:
         action[(current_state, current_symbol[0])]
     except KeyError:
-        # TODO poboljsati ispis greske, popraviti generativno stablo prilikom greske
         print(f'Error!\n{current_symbol}', file=sys.stderr)
         while len(input_list) > 0 and current_symbol[0] not in synchronization_symbols:
             current_symbol = input_list.pop(0)

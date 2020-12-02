@@ -4,6 +4,7 @@ from copy import deepcopy
 from collections import defaultdict
 import time
 import pickle as serializer
+from pathlib import Path
 
 start_time = time.time()
 braces_regex = re.compile('\<(.+)\>')
@@ -311,13 +312,13 @@ for k in dka_states.keys():
 #     print(f'{k} : {v}')
 # print(actions)
 
-with open('analizator/new_state.txt', 'wb') as f:
+with open(Path(__file__).parent / 'analizator' / 'new_state.txt', 'wb') as f:
     serializer.dump(new_state, f)
 
-with open('analizator/actions.txt', 'wb') as f:
+with open(Path(__file__).parent / 'analizator' / 'actions.txt', 'wb') as f:
     serializer.dump(actions, f)
 
-with open('analizator/synchronization.txt', 'wb') as f:
+with open(Path(__file__).parent / 'analizator' / 'synchronization.txt', 'wb') as f:
     serializer.dump(synchronization_symbols, f)
 
 
