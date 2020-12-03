@@ -46,7 +46,7 @@ stack = [0]
 current_symbol = input_list.pop(0)
 while True:
     # print(current_symbol)
-    current_state = stack[len(stack) - 1]
+    current_state = stack[-1]
     if type(current_state) == Node and current_state.data == ('%', True):
         break
 
@@ -65,13 +65,14 @@ while True:
         while len(input_list) > 0 and current_symbol[0] not in synchronization_symbols:
             current_symbol = input_list.pop(0)
         # potential issue with stack being empty
-        while (current_state, current_symbol[0]) not in action:
-            current_state = stack[len(stack) - 1]
-            if (current_state, current_symbol[0]) not in action:
+        while (current_state, current_symbol[0]) not in action and len(stack) > 0:
+            current_state = stack[-1]
+            if (current_state, current_symbol[0]) not in action and len(stack) > 1:
                 stack.pop()
                 stack.pop()
-        if len(input_list) == 0:
-            break
+        if len(input_list) == 0 or len(stack) == 0:  # mislim da ovo ne radi 🙃🙃🙃
+            print('Error recovery unsuccessful!', file=sys.stderr)
+            sys.exit(0)
         continue
 
     # move and reduce
@@ -94,7 +95,7 @@ while True:
                     stack.pop()
                     children.append(stack.pop())
         # print(f'children {[x.data for x in children]}')
-        new_current_state = stack[len(stack) - 1]
+        new_current_state = stack[-1]
         # adds nonterminal to stack
         non_terminal = Node(action[(current_state, current_symbol[0])][1])
         # print('nonterminal', non_terminal.data)
