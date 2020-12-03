@@ -70,7 +70,7 @@ while True:
             if (current_state, current_symbol[0]) not in action and len(stack) > 1:
                 stack.pop()
                 stack.pop()
-        if len(input_list) == 0 or len(stack) == 0:  # mislim da ovo ne radi 🙃🙃🙃
+        if len(input_list) == 0 or len(stack) == 0:
             print('Error recovery unsuccessful!', file=sys.stderr)
             sys.exit(0)
         continue
