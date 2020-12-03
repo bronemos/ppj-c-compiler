@@ -85,6 +85,9 @@ while True:
         stack.append(action[(current_state, current_symbol[0])][1])
         if len(input_list) > 0:
             current_symbol = input_list.pop(0)
+        else:
+            print('Cannot perform move!', file=sys.stderr)
+            sys.exit(0)
         # print('moving')
     elif not action[(current_state, current_symbol[0])][0]:
         children = list()
