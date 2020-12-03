@@ -70,7 +70,7 @@ while True:
             if (current_state, current_symbol[0]) not in action and len(stack) > 1:
                 stack.pop()
                 stack.pop()
-        if len(input_list) == 0 or len(stack) == 0:
+        if len(stack) == 0:  # if the stack is empty no corresponding state for recovery was found
             print('Error recovery unsuccessful!', file=sys.stderr)
             sys.exit(0)
         continue
@@ -83,7 +83,8 @@ while True:
         stack.append(Node(current_symbol))
         # adds state to stack
         stack.append(action[(current_state, current_symbol[0])][1])
-        current_symbol = input_list.pop(0)
+        if len(input_list) > 0:
+            current_symbol = input_list.pop(0)
         # print('moving')
     elif not action[(current_state, current_symbol[0])][0]:
         children = list()
