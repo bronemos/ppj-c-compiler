@@ -1,5 +1,4 @@
 from __future__ import annotations
-from collections import defaultdict
 
 import sys
 import re
@@ -53,239 +52,429 @@ def fill_tree(parent: Node, tree_list: list):
         previous_space_count = space_count
 
 
-def primarni_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def primarni_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == 'IDN':
+        pass
+    elif right == 'BROJ':
+        pass
+    elif right == 'ZNAK':
+        pass
+    elif right == 'NIZ_ZNAKOVA':
+        pass
+    elif right == 'L_ZAGRADA <izraz> D_ZAGRADA':
+        pass
+    else:
         pass
 
 
-def postfiks_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def postfiks_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<primarni_izraz>':
+        pass
+    elif right == '<postfiks_izraz> L_UGL_ZAGRADA <izraz> D_UGL_ZAGRADA':
+        pass
+    elif right == '<postfiks_izraz> L_ZAGRADA D_ZAGRADA':
+        pass
+    elif right == '<postfiks_izraz> L_ZAGRADA <lista_argumenata> D_ZAGRADA':
+        pass
+    elif right == '<postfiks_izraz> OP_INC':
+        pass
+    elif right == '<postfiks_izraz> OP_DEC':
+        pass
+    else:
         pass
 
 
-def lista_argumenata(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def lista_argumenata(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<izraz_pridruzivanja>':
+        pass
+    elif right == '<lista_argumenata> ZAREZ <izraz_pridruzivanja>':
+        pass
+    else:
         pass
 
 
-def unarni_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def unarni_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<postfiks_izraz>':
+        pass
+    elif right == 'OP_INC <unarni_izraz>':
+        pass
+    elif right == 'OP_DEC <unarni_izraz>':
+        pass
+    elif right == '<unarni_operator> <cast_izraz>':
+        pass
+    else:
         pass
 
 
-def unarni_operator(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def unarni_operator(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == 'PLUS':
+        pass
+    elif right == 'MINUS':
+        pass
+    elif right == 'OP_TILDA':
+        pass
+    elif right == 'OP_NEG':
+        pass
+    else:
         pass
 
 
-def cast_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def cast_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<unarni_izraz>':
+        pass
+    elif right == 'L_ZAGRADA <ime_tipa> D_ZAGRADA <cast_izraz>':
+        pass
+    else:
         pass
 
 
-def ime_tipa(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def ime_tipa(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<specifikator_tipa>':
+        pass
+    elif right == 'KR_CONST <specifikator_tipa>':
+        pass
+    else:
         pass
 
 
-def specifikator_tipa(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def specifikator_tipa(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == 'KR_VOID':
+        pass
+    elif right == 'KR_CHAR':
+        pass
+    elif right == 'KR_INT':
+        pass
+    else:
         pass
 
 
-def multiplikativni_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def multiplikativni_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<cast_izraz>':
+        pass
+    elif right == '<multiplikativni_izraz> OP_PUTA <cast_izraz>':
+        pass
+    elif right == '<multiplikativni_izraz> OP_DIJELI <cast_izraz>':
+        pass
+    elif right == '<multiplikativni_izraz> OP_MOD <cast_izraz>':
         pass
 
 
-def aditivni_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def aditivni_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<multiplikativni_izraz>':
+        pass
+    elif right == '<aditivni_izraz> PLUS <multiplikativni_izraz>':
+        pass
+    elif right == '<aditivni_izraz> MINUS <multiplikativni_izraz>':
+        pass
+    else:
         pass
 
 
-def odnosni_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def odnosni_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<aditivni_izraz>':
+        pass
+    elif right == '<odnosni_izraz> OP_LT <aditivni_izraz>':
+        pass
+    elif right == '<odnosni_izraz> OP_GT <aditivni_izraz>':
+        pass
+    elif right == '<odnosni_izraz> OP_LTE <aditivni_izraz>':
+        pass
+    elif right == '<odnosni_izraz> OP_GTE <aditivni_izraz>':
+        pass
+    else:
         pass
 
 
-def jednakosni_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def jednakosni_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<odnosni_izraz>':
+        pass
+    elif right == '<jednakosni_izraz> OP_EQ <odnosni_izraz>':
+        pass
+    elif right == '<jednakosni_izraz> OP_NEQ <odnosni_izraz>':
         pass
 
 
-def bin_i_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def bin_i_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<jednakosni_izraz>':
+        pass
+    elif right == '<bin_i_izraz> OP_BIN_I <jednakosni_izraz>':
+        pass
+    else:
         pass
 
 
-def bin_xili_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def bin_xili_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<bin_i_izraz>':
+        pass
+    elif right == '<bin_xili_izraz> OP_BIN_XILI <bin_i_izraz>':
+        pass
+    else:
         pass
 
 
-def bin_ili_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def bin_ili_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<bin_xili_izraz>':
+        pass
+    elif right == '<bin_ili_izraz> OP_BIN_ILI <bin_xili_izraz>':
+        pass
+    else:
         pass
 
 
-def log_i_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def log_i_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<bin_ili_izraz>':
+        pass
+    elif right == '<log_i_izraz> OP_I <bin_ili_izraz>':
+        pass
+    else:
         pass
 
 
-def log_ili_izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def log_ili_izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<log_i_izraz>':
+        pass
+    elif right == '<log_ili_izraz> OP_ILI <log_i_izraz>':
+        pass
+    else:
         pass
 
 
-def izraz_pridruzivanja(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def izraz_pridruzivanja(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<log_ili_izraz>':
+        pass
+    elif right == '<postfiks_izraz> OP_PRIDRUZI <izraz_pridruzivanja>':
         pass
 
 
-def izraz(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def izraz(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<izraz_pridruzivanja>':
+        pass
+    elif right == '<izraz> ZAREZ <izraz_pridruzivanja>':
+        pass
+    else:
         pass
 
 
-def slozena_naredba(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def slozena_naredba(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == 'L_VIT_ZAGRADA <lista_naredbi> D_VIT_ZAGRADA':
+        pass
+    elif right == 'L_VIT_ZAGRADA <lista_deklaracija> <lista_naredbi> D_VIT_ZAGRADA':
+        pass
+    else:
         pass
 
 
-def lista_naredbi(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def lista_naredbi(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<naredba>':
+        pass
+    elif right == '<lista_naredbi> <naredba>':
+        pass
+    else:
         pass
 
 
-def naredba(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def naredba(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<slozena_naredba>':
+        pass
+    elif right == '<izraz_naredba>':
+        pass
+    elif right == '<naredba_grananja>':
+        pass
+    elif right == '<naredba_petlje>':
+        pass
+    elif right == '<naredba_skoka>':
+        pass
+    else:
         pass
 
 
-def izraz_naredba(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def izraz_naredba(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == 'TOCKAZAREZ':
+        pass
+    elif right == '<izraz> TOCKAZAREZ':
+        pass
+    else:
         pass
 
 
-def naredba_grananja(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def naredba_grananja(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == 'KR_IF L_ZAGRADA <izraz> D_ZAGRADA <naredba>':
+        pass
+    elif right == 'KR_IF L_ZAGRADA <izraz> D_ZAGRADA <naredba> KR_ELSE <naredba>':
+        pass
+    else:
         pass
 
 
-def naredba_petlje(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def naredba_petlje(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == 'KR_WHILE L_ZAGRADA <izraz> D_ZAGRADA <naredba>':
+        pass
+    elif right == 'KR_FOR L_ZAGRADA <izraz_naredba> <izraz_naredba> D_ZAGRADA <naredba>':
+        pass
+    elif right == 'KR_FOR L_ZAGRADA <izraz_naredba> <izraz_naredba> <izraz> D_ZAGRADA <naredba>':
+        pass
+    else:
         pass
 
 
-def naredba_skoka(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def naredba_skoka(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == 'KR_CONTINUE TOCKAZAREZ':
+        pass
+    elif right == 'KR_BREAK TOCKAZAREZ':
+        pass
+    elif right == 'KR_RETURN TOCKAZAREZ':
+        pass
+    elif right == 'KR_RETURN <izraz> TOCKAZAREZ':
+        pass
+    else:
         pass
 
 
-def prijevodna_jedinica(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def prijevodna_jedinica(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<vanjska_deklaracija>':
+        pass
+    elif right == '<prijevodna_jedinica> <vanjska_deklaracija>':
+        pass
+    else:
         pass
 
 
-def vanjska_deklaracija(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def vanjska_deklaracija(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<definicija_funkcije>':
+        pass
+    elif right == '<deklaracija>':
+        pass
+    else:
         pass
 
 
-def definicija_funkcije(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def definicija_funkcije(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<ime_tipa> IDN L_ZAGRADA KR_VOID D_ZAGRADA <slozena_naredba>':
+        pass
+    elif right == '<ime_tipa> IDN L_ZAGRADA <lista_parametara> D_ZAGRADA <slozena_naredba>':
+        pass
+    else:
         pass
 
 
-def lista_parametara(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def lista_parametara(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<deklaracija_parametra>':
+        pass
+    elif right == '<lista_parametara> ZAREZ <deklaracija_parametra>':
+        pass
+    else:
         pass
 
 
-def deklaracija_parametra(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def deklaracija_parametra(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<ime_tipa> IDN':
+        pass
+    elif right == '<ime_tipa> IDN L_UGL_ZAGRADA D_UGL_ZAGRADA':
+        pass
+    else:
         pass
 
 
-def lista_deklaracija(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def lista_deklaracija(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<deklaracija>':
+        pass
+    elif right == '<lista_deklaracija> <deklaracija>':
+        pass
+    else:
         pass
 
 
-def deklaracija(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def deklaracija(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<ime_tipa> <lista_init_deklaratora> TOCKAZAREZ':
+        pass
+    else:
         pass
 
 
-def lista_init_deklaratora(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def lista_init_deklaratora(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<init_deklarator>':
+        pass
+    elif right == '<lista_init_deklaratora> ZAREZ <init_deklarator>':
+        pass
+    else:
         pass
 
 
-def init_deklarator(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def init_deklarator(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<izravni_deklarator>':
+        pass
+    elif right == '<izravni_deklarator> OP_PRIDRUZI <inicijalizator>':
+        pass
+    else:
         pass
 
 
-def izravni_deklarator(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def izravni_deklarator(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == 'IDN':
+        pass
+    elif right == 'IDN L_UGL_ZAGRADA BROJ D_UGL_ZAGRADA':
+        pass
+    elif right == 'IDN L_ZAGRADA KR_VOID D_ZAGRADA':
+        pass
+    elif right == 'IDN L_ZAGRADA <lista_parametara> D_ZAGRADA':
+        pass
+    else:
         pass
 
 
-def inicijalizator(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def inicijalizator(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<izraz_pridruzivanja>':
+        pass
+    elif right == 'L_VIT_ZAGRADA <lista_izraza_pridruzivanja> D_VIT_ZAGRADA':
+        pass
+    else:
         pass
 
 
-def lista_izraza_pridruzivanja(nonterminal: Node, fun_dict):
-    for child in nonterminal.children:
+def lista_izraza_pridruzivanja(nonterminal: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+    if right == '<izraz_pridruzivanja>':
+        pass
+    elif right == '<lista_izraza_pridruzivanja> ZAREZ <izraz_pridruzivanja>':
         pass
 
-
-function_dict = {'<primarni_izraz>': primarni_izraz,
-                 '<postfiks_izraz>': postfiks_izraz,
-                 '<lista_argumenata>': lista_argumenata,
-                 '<unarni_izraz>': unarni_izraz,
-                 '<unarni_operator>': unarni_operator,
-                 '<cast_izraz>': cast_izraz,
-                 '<ime_tipa>': ime_tipa,
-                 '<specifikator_tipa>': specifikator_tipa,
-                 '<multiplikativni_izraz>': multiplikativni_izraz,
-                 '<aditivni_izraz>': aditivni_izraz,
-                 '<odnosni_izraz>': odnosni_izraz,
-                 '<jednakosni_izraz>': jednakosni_izraz,
-                 '<bin_i_izraz>': bin_i_izraz,
-                 '<bin_xili_izraz>': bin_xili_izraz,
-                 '<bin_ili_izraz>': bin_ili_izraz,
-                 '<log_i_izraz>': log_i_izraz,
-                 '<log_ili_izraz>': log_ili_izraz,
-                 '<izraz_pridruzivanja>': izraz_pridruzivanja,
-                 '<izraz>': izraz,
-                 '<slozena_naredba>': slozena_naredba,
-                 '<lista_naredbi>': lista_naredbi,
-                 '<naredba>': naredba,
-                 '<izraz_naredba>': izraz_naredba,
-                 '<naredba_grananja>': naredba_grananja,
-                 '<naredba_petlje>': naredba_petlje,
-                 '<naredba_skoka>': naredba_skoka,
-                 '<prijevodna_jedinica>': prijevodna_jedinica,
-                 '<vanjska_deklaracija>': vanjska_deklaracija,
-                 '<definicija_funkcije>': definicija_funkcije,
-                 '<lista_parametara>': lista_parametara,
-                 '<deklaracija_parametra>': deklaracija_parametra,
-                 '<lista_deklaracija>': lista_deklaracija,
-                 '<deklaracija>': deklaracija,
-                 '<lista_init_deklaratora>': lista_init_deklaratora,
-                 '<init_deklarator>': init_deklarator,
-                 '<izravni_deklarator>': izravni_deklarator,
-                 '<inicijalizator>': inicijalizator,
-                 '<lista_izraza_pridruzivanja>': lista_izraza_pridruzivanja,
-                 }
-
-fun_dict = defaultdict(lambda: False, function_dict)
-
-print(fun_dict)
 
 tree_list = sys.stdin.read().splitlines()
 
