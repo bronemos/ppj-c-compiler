@@ -52,6 +52,39 @@ def is_l_expression(type_: Type):
     return False
 
 
+def is_castable(from_type: Type, to_type: Type):
+    if from_type == to_type:
+        return True
+    if from_type == Type.int and to_type == Type.char:
+        return True
+    elif from_type == Type.char and to_type == Type.int:
+        return True
+    elif from_type == Type.char and to_type == Type.const_char:
+        return True
+    elif from_type == Type.const_char and to_type == Type.char:
+        return True
+    elif from_type == Type.int and to_type == Type.const_int:
+        return True
+    elif from_type == Type.const_int and to_type == Type.int:
+        return True
+    elif from_type == Type.int_array and to_type == Type.const_int_array:
+        return True
+    elif from_type == Type.char_array and to_type == Type.const_char_array:
+        return True
+    return False
+
+
+def array_to_single(array_type: Type):
+    if array_type == Type.int_array:
+        return Type.int
+    elif array_type == Type.char_array:
+        return Type.char
+    elif array_type == Type.const_int_array:
+        return Type.const_int
+    elif array_type == Type.const_char_array:
+        return Type.const_char
+
+
 def dfs_print(root_: Node, prefix=''):
     if root_:
         if root_.is_terminal:
@@ -136,12 +169,18 @@ def postfiks_izraz(node: Node):
         return primarni_izraz(node.children[0])
 
     elif right == '<postfiks_izraz> L_UGL_ZAGRADA <izraz> D_UGL_ZAGRADA':
-        type_, _ = postfiks_izraz(node.children[0])
-        if type_ != Type.int_array and type_ != Type.const_int_array and type_ != Type.char_array and type_ != Type.const_char_array:
+        type_postfix, _ = postfiks_izraz(node.children[0])
+        if type_postfix != Type.int_array and type_postfix != Type.const_int_array and type_postfix != Type.char_array and type_postfix != Type.const_char_array:
             print(
                 f'<postfiks_izraz> ::= {node.children[0]} {node.children[1]} {node.children[2]} {node.children[3]}')
             exit(0)
-        izraz(node.children[2])
+        type_izraz, _ = izraz(node.children[2])
+        if not is_castable(type_izraz, Type.int):
+            print(
+                f'<postfiks_izraz> ::= {node.children[0]} {node.children[1]} {node.children[2]} {node.children[3]}')
+            exit(0)
+        type_ = array_to_single(type_postfix)
+        return type_, is_l_expression(type_)
 
     elif right == '<postfiks_izraz> L_ZAGRADA D_ZAGRADA':
         postfiks_izraz(node.children[0])
