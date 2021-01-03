@@ -27,13 +27,15 @@ class TableNode:
             data = {}
         self.parent = parent
         self.children = []
-        self.data = {}  # {identifier -> type}
+        self.data = {}
+        # {key: (ime var ili fje, True za var i False za fju) ->
+        # value: (tip za var, za fju touple ([lista_argumenata], povratna_vrijednost)}
 
-    def search(self, identifier):
+    def search_var(self, identifier):
         node = self
         x = None
         while node is not None:
-            if x := node.data.get(identifier) is not None:
+            if x := node.data.get((identifier, True)) is not None:
                 break
             node = node.parent
         return x
@@ -94,7 +96,7 @@ def primarni_izraz(node: Node):
 
     if right == 'IDN':
         child = node.children[0]
-        if data := data_table.search(child.data[2]) is None:
+        if data := data_table.search_var(child.data[2]) is None:
             print(f'<primarni_izraz> ::= {child}')
             exit(0)
         return data.type, is_l_expression(data.type)
