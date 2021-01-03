@@ -15,7 +15,7 @@ class Node:
 
     def __str__(self):
         if self.is_terminal:
-            return f'{self.data[0]}({self.data[1]},{self.data[2]}'
+            return f'{self.data[0]}({self.data[1]},{self.data[2]})'
         else:
             return self.data
 
