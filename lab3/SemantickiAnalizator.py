@@ -109,41 +109,51 @@ def primarni_izraz(node: Node):
 
     elif right == 'NIZ_ZNAKOVA':
         child = node.children[0]
-        if not is_const_char_array(child[2]):
+        if not is_const_char_array(child.data[2]):
             print(f'<primarni_izraz> ::= {child.data[0]}({child.data[1]},{child.data[2]})')
             exit(0)
-        return Type.char, 0
+        return Type.char, False
 
     elif right == 'L_ZAGRADA <izraz> D_ZAGRADA':
-        pass
+        return izraz(node.children[1])
     else:
         pass
 
 
 def postfiks_izraz(node: Node):
+    #TODO provjeriti returnove
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<primarni_izraz>':
-        pass
+        return primarni_izraz(node.children[0])
     elif right == '<postfiks_izraz> L_UGL_ZAGRADA <izraz> D_UGL_ZAGRADA':
         pass
     elif right == '<postfiks_izraz> L_ZAGRADA D_ZAGRADA':
-        pass
+        postfiks_izraz(node.children[0])
+        return #tip funkcije, False
     elif right == '<postfiks_izraz> L_ZAGRADA <lista_argumenata> D_ZAGRADA':
-        pass
+        postfiks_izraz(node.children[0])
+        lista_argumenata(node.children[2])
+        return #tip, False
     elif right == '<postfiks_izraz> OP_INC':
-        pass
+        #TODO provjeriti
+        postfiks_izraz(node.children[0])
+        return Type.int, False
     elif right == '<postfiks_izraz> OP_DEC':
-        pass
+        #TODO provjeriti
+        postfiks_izraz(node.children[0])
+        return Type.int, False
     else:
         pass
 
 
 def lista_argumenata(node: Node):
+    #TODO prov
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<izraz_pridruzivanja>':
-        pass
+        return izraz_pridruzivanja(node.children[0])
     elif right == '<lista_argumenata> ZAREZ <izraz_pridruzivanja>':
-        pass
+        return lista_argumenata(node.children[0]) + lista_argumenata(node.children[2])
     else:
         pass
 
@@ -151,13 +161,15 @@ def lista_argumenata(node: Node):
 def unarni_izraz(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<postfiks_izraz>':
-        pass
+        return postfiks_izraz(node.children[0])
     elif right == 'OP_INC <unarni_izraz>':
-        pass
+        #TODO prov
+        unarni_izraz(node.children[1])
+
     elif right == 'OP_DEC <unarni_izraz>':
-        pass
+        unarni_izraz(node.children[1])
     elif right == '<unarni_operator> <cast_izraz>':
-        pass
+        cast_izraz(node.children[1])
     else:
         pass
 
@@ -179,9 +191,11 @@ def unarni_operator(node: Node):
 def cast_izraz(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<unarni_izraz>':
-        pass
+        return unarni_izraz(node.children[0])
     elif right == 'L_ZAGRADA <ime_tipa> D_ZAGRADA <cast_izraz>':
-        pass
+        ime_tipa(node.children[1])
+        cast_izraz(node.children[3])
+        #todo return
     else:
         pass
 
@@ -189,7 +203,7 @@ def cast_izraz(node: Node):
 def ime_tipa(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<specifikator_tipa>':
-        pass
+        return specifikator_tipa(node.children[0])
     elif right == 'KR_CONST <specifikator_tipa>':
         pass
     else:
