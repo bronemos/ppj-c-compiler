@@ -109,14 +109,14 @@ def primarni_izraz(node: Node):
     elif right == 'ZNAK':
         child = node.children[0]
         if not is_char(child.data[2]):
-            print(f'<primarni_izraz> ::= {child})')
+            print(f'<primarni_izraz> ::= {child}')
             exit(0)
         return Type.char, False
 
     elif right == 'NIZ_ZNAKOVA':
         child = node.children[0]
         if not is_const_char_array(child.data[2]):
-            print(f'<primarni_izraz> ::= {terminal_output_string(child.data)})')
+            print(f'<primarni_izraz> ::= {child}')
             exit(0)
         return Type.char, False
 
@@ -137,7 +137,7 @@ def postfiks_izraz(node: Node):
         type_, _ = postfiks_izraz(node.children[0])
         if type_ != Type.int_array and type_ != Type.const_int_array and type_ != Type.char_array and type_ != Type.const_char_array:
             print(
-                f'<postfiks_izraz> ::= {node.children[0].data} {terminal_output_string(node.children[1].data)} {node.children[2].data} {terminal_output_string(node.children[3].data)}')
+                f'<postfiks_izraz> ::= {node.children[0]} {node.children[1]} {node.children[2]} {node.children[3]}')
             exit(0)
         izraz(node.children[2])
 
