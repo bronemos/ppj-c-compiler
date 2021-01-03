@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 import re
 
+from lab3.DataTypes import *
+
 
 class Node:
 
@@ -33,12 +35,15 @@ class TableNode:
 
 
 data_table = TableNode()
-# Od zavrˇsnih znakova gramatike, jedino IDN
-# (identifikator) moˇze biti l-izraz i to samo ako predstavlja varijablu brojevnog tipa (char
-# ili int) bez const-kvalifikatora. Identifikator koji predstavlja funkciju ili niz nije l-izraz.
-def is_l(data):
-    pass
-    # TODO: check if node is l
+
+
+# Od zavrsnih znakova gramatike, jedino IDN identifikator moze biti l-izraz i to samo ako predstavlja varijablu
+# brojevnog tipa (char ili int) bez const-kvalifikatora. Identifikator koji predstavlja funkciju ili niz nije l-izraz.
+def is_l_expression(type_):
+    if type_ == 'char' or type_ == 'int':
+        return True
+    return False
+
 
 def dfs_print(root_: Node, prefix=''):
     if root_:
@@ -81,19 +86,35 @@ def fill_tree(parent: Node, tree_list: list):
 
 def primarni_izraz(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == 'IDN':
         child = node.children[0]
-        if data := data_table.search(child[2]) is None:
+        if data := data_table.search(child.data[2]) is None:
             print(f'<primarni_izraz> ::= {child.data[0]}({child.data[1]},{child.data[2]})')
             exit(0)
-        else:
-            return data.type, is_l(data.type)
+        return data.type, is_l_expression(data.type)
+
     elif right == 'BROJ':
-        pass
+        child = node.children[0]
+        if not is_int(child.data[2]):
+            print(f'<primarni_izraz> ::= {child.data[0]}({child.data[1]},{child.data[2]})')
+            exit(0)
+        return Type.int, False
+
     elif right == 'ZNAK':
-        pass
+        child = node.children[0]
+        if not is_char(child.data[2]):
+            print(f'<primarni_izraz> ::= {child.data[0]}({child.data[1]},{child.data[2]})')
+            exit(0)
+        return Type.char, False
+
     elif right == 'NIZ_ZNAKOVA':
-        pass
+        child = node.children[0]
+        if not is_const_char_array(child[2]):
+            print(f'<primarni_izraz> ::= {child.data[0]}({child.data[1]},{child.data[2]})')
+            exit(0)
+        return Type.char, 0
+
     elif right == 'L_ZAGRADA <izraz> D_ZAGRADA':
         pass
     else:
