@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import re
 
 from DataTypes import *
 
@@ -39,8 +38,8 @@ data_table = TableNode()
 
 # Od zavrsnih znakova gramatike, jedino IDN identifikator moze biti l-izraz i to samo ako predstavlja varijablu
 # brojevnog tipa (char ili int) bez const-kvalifikatora. Identifikator koji predstavlja funkciju ili niz nije l-izraz.
-def is_l_expression(type_):
-    if type_ == 'char' or type_ == 'int':
+def is_l_expression(type_: Type):
+    if type_.value == 'char' or type_.value == 'int':
         return True
     return False
 
