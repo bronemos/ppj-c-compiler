@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import re
 
-from lab3.DataTypes import *
+from DataTypes import *
 
 
 class Node:
@@ -17,7 +17,7 @@ class Node:
 
 class TableNode:
 
-    def __init__(self, data={}, parent: Node = None):
+    def __init__(self, data: dict = {}, parent: Node = None):
         if data is None:
             data = {}
         self.parent = parent
