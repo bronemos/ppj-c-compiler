@@ -4,8 +4,13 @@ from enum import Enum
 
 class Type(Enum):
     int = 'int'
+    const_int = 'const_int'
     char = 'char'
+    const_char = 'const_char'
+    char_array = 'char_array'
     const_char_array = 'const_char_array'
+    int_array = 'int_array'
+    const_int_array = 'const_int_array'
 
 
 def is_int(num):

@@ -127,7 +127,7 @@ def postfiks_izraz(node: Node):
     if right == '<primarni_izraz>':
         return primarni_izraz(node.children[0])
     elif right == '<postfiks_izraz> L_UGL_ZAGRADA <izraz> D_UGL_ZAGRADA':
-        pass
+        type_, _ = postfiks_izraz(node.children[0])
     elif right == '<postfiks_izraz> L_ZAGRADA D_ZAGRADA':
         postfiks_izraz(node.children[0])
         return #tip funkcije, False
