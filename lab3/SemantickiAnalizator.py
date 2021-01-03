@@ -13,6 +13,12 @@ class Node:
         self.data = data
         self.children = []
 
+    def __str__(self):
+        if self.is_terminal:
+            return f'{self.data[0]}({self.data[1]},{self.data[2]}'
+        else:
+            return self.data
+
 
 class TableNode:
 
@@ -89,28 +95,28 @@ def primarni_izraz(node: Node):
     if right == 'IDN':
         child = node.children[0]
         if data := data_table.search(child.data[2]) is None:
-            print(f'<primarni_izraz> ::= {child.data[0]}({child.data[1]},{child.data[2]})')
+            print(f'<primarni_izraz> ::= {child}')
             exit(0)
         return data.type, is_l_expression(data.type)
 
     elif right == 'BROJ':
         child = node.children[0]
         if not is_int(child.data[2]):
-            print(f'<primarni_izraz> ::= {child.data[0]}({child.data[1]},{child.data[2]})')
+            print(f'<primarni_izraz> ::= {child}')
             exit(0)
         return Type.int, False
 
     elif right == 'ZNAK':
         child = node.children[0]
         if not is_char(child.data[2]):
-            print(f'<primarni_izraz> ::= {child.data[0]}({child.data[1]},{child.data[2]})')
+            print(f'<primarni_izraz> ::= {child})')
             exit(0)
         return Type.char, False
 
     elif right == 'NIZ_ZNAKOVA':
         child = node.children[0]
         if not is_const_char_array(child.data[2]):
-            print(f'<primarni_izraz> ::= {child.data[0]}({child.data[1]},{child.data[2]})')
+            print(f'<primarni_izraz> ::= {terminal_output_string(child.data)})')
             exit(0)
         return Type.char, False
 
@@ -121,34 +127,45 @@ def primarni_izraz(node: Node):
 
 
 def postfiks_izraz(node: Node):
-    #TODO provjeriti returnove
+    # TODO provjeriti returnove
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<primarni_izraz>':
         return primarni_izraz(node.children[0])
+
     elif right == '<postfiks_izraz> L_UGL_ZAGRADA <izraz> D_UGL_ZAGRADA':
         type_, _ = postfiks_izraz(node.children[0])
+        if type_ != Type.int_array and type_ != Type.const_int_array and type_ != Type.char_array and type_ != Type.const_char_array:
+            print(
+                f'<postfiks_izraz> ::= {node.children[0].data} {terminal_output_string(node.children[1].data)} {node.children[2].data} {terminal_output_string(node.children[3].data)}')
+            exit(0)
+        izraz(node.children[2])
+
     elif right == '<postfiks_izraz> L_ZAGRADA D_ZAGRADA':
         postfiks_izraz(node.children[0])
-        return #tip funkcije, False
+        return  # tip funkcije, False
+
     elif right == '<postfiks_izraz> L_ZAGRADA <lista_argumenata> D_ZAGRADA':
         postfiks_izraz(node.children[0])
         lista_argumenata(node.children[2])
-        return #tip, False
+        return  # tip, False
+
     elif right == '<postfiks_izraz> OP_INC':
-        #TODO provjeriti
+        # TODO provjeriti
         postfiks_izraz(node.children[0])
         return Type.int, False
+
     elif right == '<postfiks_izraz> OP_DEC':
-        #TODO provjeriti
+        # TODO provjeriti
         postfiks_izraz(node.children[0])
         return Type.int, False
+
     else:
         pass
 
 
 def lista_argumenata(node: Node):
-    #TODO prov
+    # TODO prov
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<izraz_pridruzivanja>':
         return izraz_pridruzivanja(node.children[0])
@@ -163,7 +180,7 @@ def unarni_izraz(node: Node):
     if right == '<postfiks_izraz>':
         return postfiks_izraz(node.children[0])
     elif right == 'OP_INC <unarni_izraz>':
-        #TODO prov
+        # TODO prov
         unarni_izraz(node.children[1])
 
     elif right == 'OP_DEC <unarni_izraz>':
@@ -195,7 +212,7 @@ def cast_izraz(node: Node):
     elif right == 'L_ZAGRADA <ime_tipa> D_ZAGRADA <cast_izraz>':
         ime_tipa(node.children[1])
         cast_izraz(node.children[3])
-        #todo return
+        # todo return
     else:
         pass
 
