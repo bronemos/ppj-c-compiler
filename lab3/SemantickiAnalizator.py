@@ -13,14 +13,41 @@ class Node:
         self.children = []
 
 
-def dfs_print(root: Node, prefix=''):
-    if root:
-        if root.is_terminal:
-            print(prefix + ' '.join(root.data))
+class TableNode:
+
+    def __init__(self, data={}, parent: Node = None):
+        if data is None:
+            data = {}
+        self.parent = parent
+        self.children = []
+        self.data = {}  # {identifier -> type}
+
+    def search(self, identifier):
+        node = self
+        x = None
+        while node is not None:
+            if x := node.data.get(identifier) is not None:
+                break
+            node = node.parent
+        return x
+
+
+data_table = TableNode()
+# Od zavrˇsnih znakova gramatike, jedino IDN
+# (identifikator) moˇze biti l-izraz i to samo ako predstavlja varijablu brojevnog tipa (char
+# ili int) bez const-kvalifikatora. Identifikator koji predstavlja funkciju ili niz nije l-izraz.
+def is_l(data):
+    pass
+    # TODO: check if node is l
+
+def dfs_print(root_: Node, prefix=''):
+    if root_:
+        if root_.is_terminal:
+            print(prefix + ' '.join(root_.data))
         else:
-            print(prefix + root.data)
+            print(prefix + root_.data)
         prefix = prefix + ' '
-    for child in root.children:
+    for child in root_.children:
         dfs_print(child, prefix)
 
 
@@ -52,10 +79,15 @@ def fill_tree(parent: Node, tree_list: list):
         previous_space_count = space_count
 
 
-def primarni_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def primarni_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == 'IDN':
-        pass
+        child = node.children[0]
+        if data := data_table.search(child[2]) is None:
+            print(f'<primarni_izraz> ::= {child.data[0]}({child.data[1]},{child.data[2]})')
+            exit(0)
+        else:
+            return data.type, is_l(data.type)
     elif right == 'BROJ':
         pass
     elif right == 'ZNAK':
@@ -68,8 +100,8 @@ def primarni_izraz(nonterminal: Node):
         pass
 
 
-def postfiks_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def postfiks_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<primarni_izraz>':
         pass
     elif right == '<postfiks_izraz> L_UGL_ZAGRADA <izraz> D_UGL_ZAGRADA':
@@ -86,8 +118,8 @@ def postfiks_izraz(nonterminal: Node):
         pass
 
 
-def lista_argumenata(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def lista_argumenata(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<izraz_pridruzivanja>':
         pass
     elif right == '<lista_argumenata> ZAREZ <izraz_pridruzivanja>':
@@ -96,8 +128,8 @@ def lista_argumenata(nonterminal: Node):
         pass
 
 
-def unarni_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def unarni_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<postfiks_izraz>':
         pass
     elif right == 'OP_INC <unarni_izraz>':
@@ -110,8 +142,8 @@ def unarni_izraz(nonterminal: Node):
         pass
 
 
-def unarni_operator(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def unarni_operator(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == 'PLUS':
         pass
     elif right == 'MINUS':
@@ -124,8 +156,8 @@ def unarni_operator(nonterminal: Node):
         pass
 
 
-def cast_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def cast_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<unarni_izraz>':
         pass
     elif right == 'L_ZAGRADA <ime_tipa> D_ZAGRADA <cast_izraz>':
@@ -134,8 +166,8 @@ def cast_izraz(nonterminal: Node):
         pass
 
 
-def ime_tipa(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def ime_tipa(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<specifikator_tipa>':
         pass
     elif right == 'KR_CONST <specifikator_tipa>':
@@ -144,8 +176,8 @@ def ime_tipa(nonterminal: Node):
         pass
 
 
-def specifikator_tipa(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def specifikator_tipa(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == 'KR_VOID':
         pass
     elif right == 'KR_CHAR':
@@ -156,8 +188,8 @@ def specifikator_tipa(nonterminal: Node):
         pass
 
 
-def multiplikativni_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def multiplikativni_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<cast_izraz>':
         pass
     elif right == '<multiplikativni_izraz> OP_PUTA <cast_izraz>':
@@ -168,8 +200,8 @@ def multiplikativni_izraz(nonterminal: Node):
         pass
 
 
-def aditivni_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def aditivni_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<multiplikativni_izraz>':
         pass
     elif right == '<aditivni_izraz> PLUS <multiplikativni_izraz>':
@@ -180,8 +212,8 @@ def aditivni_izraz(nonterminal: Node):
         pass
 
 
-def odnosni_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def odnosni_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<aditivni_izraz>':
         pass
     elif right == '<odnosni_izraz> OP_LT <aditivni_izraz>':
@@ -196,8 +228,8 @@ def odnosni_izraz(nonterminal: Node):
         pass
 
 
-def jednakosni_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def jednakosni_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<odnosni_izraz>':
         pass
     elif right == '<jednakosni_izraz> OP_EQ <odnosni_izraz>':
@@ -206,8 +238,8 @@ def jednakosni_izraz(nonterminal: Node):
         pass
 
 
-def bin_i_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def bin_i_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<jednakosni_izraz>':
         pass
     elif right == '<bin_i_izraz> OP_BIN_I <jednakosni_izraz>':
@@ -216,8 +248,8 @@ def bin_i_izraz(nonterminal: Node):
         pass
 
 
-def bin_xili_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def bin_xili_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<bin_i_izraz>':
         pass
     elif right == '<bin_xili_izraz> OP_BIN_XILI <bin_i_izraz>':
@@ -226,8 +258,8 @@ def bin_xili_izraz(nonterminal: Node):
         pass
 
 
-def bin_ili_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def bin_ili_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<bin_xili_izraz>':
         pass
     elif right == '<bin_ili_izraz> OP_BIN_ILI <bin_xili_izraz>':
@@ -236,8 +268,8 @@ def bin_ili_izraz(nonterminal: Node):
         pass
 
 
-def log_i_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def log_i_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<bin_ili_izraz>':
         pass
     elif right == '<log_i_izraz> OP_I <bin_ili_izraz>':
@@ -246,8 +278,8 @@ def log_i_izraz(nonterminal: Node):
         pass
 
 
-def log_ili_izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def log_ili_izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<log_i_izraz>':
         pass
     elif right == '<log_ili_izraz> OP_ILI <log_i_izraz>':
@@ -256,16 +288,16 @@ def log_ili_izraz(nonterminal: Node):
         pass
 
 
-def izraz_pridruzivanja(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def izraz_pridruzivanja(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<log_ili_izraz>':
         pass
     elif right == '<postfiks_izraz> OP_PRIDRUZI <izraz_pridruzivanja>':
         pass
 
 
-def izraz(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def izraz(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<izraz_pridruzivanja>':
         pass
     elif right == '<izraz> ZAREZ <izraz_pridruzivanja>':
@@ -274,8 +306,8 @@ def izraz(nonterminal: Node):
         pass
 
 
-def slozena_naredba(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def slozena_naredba(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == 'L_VIT_ZAGRADA <lista_naredbi> D_VIT_ZAGRADA':
         pass
     elif right == 'L_VIT_ZAGRADA <lista_deklaracija> <lista_naredbi> D_VIT_ZAGRADA':
@@ -284,8 +316,8 @@ def slozena_naredba(nonterminal: Node):
         pass
 
 
-def lista_naredbi(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def lista_naredbi(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<naredba>':
         pass
     elif right == '<lista_naredbi> <naredba>':
@@ -294,8 +326,8 @@ def lista_naredbi(nonterminal: Node):
         pass
 
 
-def naredba(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def naredba(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<slozena_naredba>':
         pass
     elif right == '<izraz_naredba>':
@@ -310,8 +342,8 @@ def naredba(nonterminal: Node):
         pass
 
 
-def izraz_naredba(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def izraz_naredba(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == 'TOCKAZAREZ':
         pass
     elif right == '<izraz> TOCKAZAREZ':
@@ -320,8 +352,8 @@ def izraz_naredba(nonterminal: Node):
         pass
 
 
-def naredba_grananja(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def naredba_grananja(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == 'KR_IF L_ZAGRADA <izraz> D_ZAGRADA <naredba>':
         pass
     elif right == 'KR_IF L_ZAGRADA <izraz> D_ZAGRADA <naredba> KR_ELSE <naredba>':
@@ -330,8 +362,8 @@ def naredba_grananja(nonterminal: Node):
         pass
 
 
-def naredba_petlje(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def naredba_petlje(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == 'KR_WHILE L_ZAGRADA <izraz> D_ZAGRADA <naredba>':
         pass
     elif right == 'KR_FOR L_ZAGRADA <izraz_naredba> <izraz_naredba> D_ZAGRADA <naredba>':
@@ -342,8 +374,8 @@ def naredba_petlje(nonterminal: Node):
         pass
 
 
-def naredba_skoka(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def naredba_skoka(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == 'KR_CONTINUE TOCKAZAREZ':
         pass
     elif right == 'KR_BREAK TOCKAZAREZ':
@@ -356,8 +388,8 @@ def naredba_skoka(nonterminal: Node):
         pass
 
 
-def prijevodna_jedinica(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def prijevodna_jedinica(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<vanjska_deklaracija>':
         pass
     elif right == '<prijevodna_jedinica> <vanjska_deklaracija>':
@@ -366,8 +398,8 @@ def prijevodna_jedinica(nonterminal: Node):
         pass
 
 
-def vanjska_deklaracija(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def vanjska_deklaracija(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<definicija_funkcije>':
         pass
     elif right == '<deklaracija>':
@@ -376,8 +408,8 @@ def vanjska_deklaracija(nonterminal: Node):
         pass
 
 
-def definicija_funkcije(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def definicija_funkcije(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<ime_tipa> IDN L_ZAGRADA KR_VOID D_ZAGRADA <slozena_naredba>':
         pass
     elif right == '<ime_tipa> IDN L_ZAGRADA <lista_parametara> D_ZAGRADA <slozena_naredba>':
@@ -386,8 +418,8 @@ def definicija_funkcije(nonterminal: Node):
         pass
 
 
-def lista_parametara(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def lista_parametara(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<deklaracija_parametra>':
         pass
     elif right == '<lista_parametara> ZAREZ <deklaracija_parametra>':
@@ -396,8 +428,8 @@ def lista_parametara(nonterminal: Node):
         pass
 
 
-def deklaracija_parametra(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def deklaracija_parametra(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<ime_tipa> IDN':
         pass
     elif right == '<ime_tipa> IDN L_UGL_ZAGRADA D_UGL_ZAGRADA':
@@ -406,8 +438,8 @@ def deklaracija_parametra(nonterminal: Node):
         pass
 
 
-def lista_deklaracija(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def lista_deklaracija(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<deklaracija>':
         pass
     elif right == '<lista_deklaracija> <deklaracija>':
@@ -416,16 +448,16 @@ def lista_deklaracija(nonterminal: Node):
         pass
 
 
-def deklaracija(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def deklaracija(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<ime_tipa> <lista_init_deklaratora> TOCKAZAREZ':
         pass
     else:
         pass
 
 
-def lista_init_deklaratora(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def lista_init_deklaratora(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<init_deklarator>':
         pass
     elif right == '<lista_init_deklaratora> ZAREZ <init_deklarator>':
@@ -434,8 +466,8 @@ def lista_init_deklaratora(nonterminal: Node):
         pass
 
 
-def init_deklarator(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def init_deklarator(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<izravni_deklarator>':
         pass
     elif right == '<izravni_deklarator> OP_PRIDRUZI <inicijalizator>':
@@ -444,8 +476,8 @@ def init_deklarator(nonterminal: Node):
         pass
 
 
-def izravni_deklarator(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def izravni_deklarator(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == 'IDN':
         pass
     elif right == 'IDN L_UGL_ZAGRADA BROJ D_UGL_ZAGRADA':
@@ -458,8 +490,8 @@ def izravni_deklarator(nonterminal: Node):
         pass
 
 
-def inicijalizator(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def inicijalizator(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<izraz_pridruzivanja>':
         pass
     elif right == 'L_VIT_ZAGRADA <lista_izraza_pridruzivanja> D_VIT_ZAGRADA':
@@ -468,8 +500,8 @@ def inicijalizator(nonterminal: Node):
         pass
 
 
-def lista_izraza_pridruzivanja(nonterminal: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in nonterminal.children])
+def lista_izraza_pridruzivanja(node: Node):
+    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == '<izraz_pridruzivanja>':
         pass
     elif right == '<lista_izraza_pridruzivanja> ZAREZ <izraz_pridruzivanja>':

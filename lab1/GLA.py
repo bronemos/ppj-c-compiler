@@ -191,7 +191,7 @@ for idx, x in enumerate(data):
             except AttributeError:
                 pass
 
-with open('lab1/analizator/table.txt', 'w') as f:
+with open('analizator/table.txt', 'w') as f:
     f.write(f'{analyzer_starting_state}\n')
     for regex in regex_set:
         f.write(regex + '\n')
@@ -199,6 +199,6 @@ with open('lab1/analizator/table.txt', 'w') as f:
         a = convert_expression_to_machine(regex, m)
         f.write(f'start:{a[0]},acceptable:{a[1]}\n')  # start and acceptable state
 
-with open('lab1/analizator/test.txt', 'wb') as f:
+with open('analizator/test.txt', 'wb') as f:
     serializer.dump(all_actions, f)
 
