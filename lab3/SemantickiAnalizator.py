@@ -390,203 +390,296 @@ def izraz(node: Node):
 
 def slozena_naredba(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == 'L_VIT_ZAGRADA <lista_naredbi> D_VIT_ZAGRADA':
-        pass
+        lista_naredbi(node.children[1])
+
     elif right == 'L_VIT_ZAGRADA <lista_deklaracija> <lista_naredbi> D_VIT_ZAGRADA':
-        pass
+        lista_deklaracija(node.children[1])
+        lista_naredbi(node.children[2])
+
     else:
         pass
 
 
 def lista_naredbi(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<naredba>':
-        pass
+        naredba(node.children[0])
+
     elif right == '<lista_naredbi> <naredba>':
-        pass
+        lista_naredbi(node.children[0])
+        lista_naredbi(node.children[1])
+
     else:
         pass
 
 
 def naredba(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<slozena_naredba>':
-        pass
+        slozena_naredba(node.children[0])
+
     elif right == '<izraz_naredba>':
-        pass
+        izraz_naredba(node.children[0])
+
     elif right == '<naredba_grananja>':
-        pass
+        naredba_grananja(node.children[0])
+
     elif right == '<naredba_petlje>':
-        pass
+        naredba_petlje(node.children[0])
+
     elif right == '<naredba_skoka>':
-        pass
+        naredba_skoka(node.children[0])
+
     else:
         pass
 
 
 def izraz_naredba(node: Node):
+    #todo zavrsiti
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == 'TOCKAZAREZ':
         pass
+
     elif right == '<izraz> TOCKAZAREZ':
-        pass
+        type_, _ = izraz(node.children[0])
+        return type_
+
     else:
         pass
 
 
 def naredba_grananja(node: Node):
+    name = '<naredba_grananja>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == 'KR_IF L_ZAGRADA <izraz> D_ZAGRADA <naredba>':
-        pass
+        type_, _ = izraz(node.children[2])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        naredba(node.children[4])
+
     elif right == 'KR_IF L_ZAGRADA <izraz> D_ZAGRADA <naredba> KR_ELSE <naredba>':
-        pass
+        type_, _ = izraz(node.children[2])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        naredba(node.children[4])
+        naredba(node.children[6])
+
     else:
         pass
 
 
 def naredba_petlje(node: Node):
+    name = '<naredba_petlje>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == 'KR_WHILE L_ZAGRADA <izraz> D_ZAGRADA <naredba>':
-        pass
+        type_, _ = izraz(node.children[2])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        naredba(node.children[4])
+
     elif right == 'KR_FOR L_ZAGRADA <izraz_naredba> <izraz_naredba> D_ZAGRADA <naredba>':
-        pass
+        izraz_naredba(node.children[2])
+        type_ = izraz_naredba(node.children[3])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        naredba(node.children[4])
+
     elif right == 'KR_FOR L_ZAGRADA <izraz_naredba> <izraz_naredba> <izraz> D_ZAGRADA <naredba>':
-        pass
+        izraz_naredba(node.children[2])
+        type_ = izraz_naredba(node.children[3])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        izraz(node.children[4])
+        naredba(node.children[6])
+
     else:
         pass
 
 
 def naredba_skoka(node: Node):
+    #todo zavrsiti
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == 'KR_CONTINUE TOCKAZAREZ':
         pass
+
     elif right == 'KR_BREAK TOCKAZAREZ':
         pass
+
     elif right == 'KR_RETURN TOCKAZAREZ':
         pass
+
     elif right == 'KR_RETURN <izraz> TOCKAZAREZ':
         pass
+
     else:
         pass
 
 
 def prijevodna_jedinica(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<vanjska_deklaracija>':
-        pass
+        vanjska_deklaracija(node.children[0])
+
     elif right == '<prijevodna_jedinica> <vanjska_deklaracija>':
-        pass
+        prijevodna_jedinica(node.children[0])
+        vanjska_deklaracija(node.children[1])
+
     else:
         pass
 
 
 def vanjska_deklaracija(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<definicija_funkcije>':
-        pass
+        definicija_funkcije(node.children[0])
+
     elif right == '<deklaracija>':
-        pass
+        deklaracija(node.children[0])
+
     else:
         pass
 
 
 def definicija_funkcije(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<ime_tipa> IDN L_ZAGRADA KR_VOID D_ZAGRADA <slozena_naredba>':
         pass
+
     elif right == '<ime_tipa> IDN L_ZAGRADA <lista_parametara> D_ZAGRADA <slozena_naredba>':
         pass
+
     else:
         pass
 
 
 def lista_parametara(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<deklaracija_parametra>':
         pass
+
     elif right == '<lista_parametara> ZAREZ <deklaracija_parametra>':
         pass
+
     else:
         pass
 
 
 def deklaracija_parametra(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<ime_tipa> IDN':
         pass
+
     elif right == '<ime_tipa> IDN L_UGL_ZAGRADA D_UGL_ZAGRADA':
         pass
+
     else:
         pass
 
 
 def lista_deklaracija(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<deklaracija>':
         pass
+
     elif right == '<lista_deklaracija> <deklaracija>':
         pass
+
     else:
         pass
 
 
 def deklaracija(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<ime_tipa> <lista_init_deklaratora> TOCKAZAREZ':
         pass
+
     else:
         pass
 
 
 def lista_init_deklaratora(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<init_deklarator>':
         pass
+
     elif right == '<lista_init_deklaratora> ZAREZ <init_deklarator>':
         pass
+
     else:
         pass
 
 
 def init_deklarator(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<izravni_deklarator>':
         pass
+
     elif right == '<izravni_deklarator> OP_PRIDRUZI <inicijalizator>':
         pass
+
     else:
         pass
 
 
 def izravni_deklarator(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == 'IDN':
         pass
+
     elif right == 'IDN L_UGL_ZAGRADA BROJ D_UGL_ZAGRADA':
         pass
+
     elif right == 'IDN L_ZAGRADA KR_VOID D_ZAGRADA':
         pass
+
     elif right == 'IDN L_ZAGRADA <lista_parametara> D_ZAGRADA':
         pass
+
     else:
         pass
 
 
 def inicijalizator(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<izraz_pridruzivanja>':
         pass
+
     elif right == 'L_VIT_ZAGRADA <lista_izraza_pridruzivanja> D_VIT_ZAGRADA':
         pass
+
     else:
         pass
 
 
 def lista_izraza_pridruzivanja(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<izraz_pridruzivanja>':
         pass
+
     elif right == '<lista_izraza_pridruzivanja> ZAREZ <izraz_pridruzivanja>':
+        pass
+
+    else:
         pass
 
 
