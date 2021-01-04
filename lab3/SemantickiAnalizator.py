@@ -164,7 +164,7 @@ def postfiks_izraz(node: Node):
 
     elif right == '<postfiks_izraz> OP_INC' or right == '<postfiks_izraz> OP_DEC':
         type_, l_expression = postfiks_izraz(node.children[0])
-        if not is_castable(type_, Type.int) or not l_expression:
+        if not (is_castable(type_, Type.int) and l_expression):
             terminate(name, node.children)
         return Type.int, False
 
@@ -188,16 +188,22 @@ def lista_argumenata(node: Node):
 
 def unarni_izraz(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+    name = '<unarni_izraz>'
+
     if right == '<postfiks_izraz>':
         return postfiks_izraz(node.children[0])
-    elif right == 'OP_INC <unarni_izraz>':
-        # TODO prov
-        unarni_izraz(node.children[1])
 
-    elif right == 'OP_DEC <unarni_izraz>':
-        unarni_izraz(node.children[1])
+    elif right == 'OP_INC <unarni_izraz>' or right == 'OP_DEC <unarni_izraz>':
+        type_, l_expression = unarni_izraz(node.children[1])
+        if not (l_expression and is_castable(type_, Type.int)):
+            terminate(name, node.children)
+        return Type.int, False
+
     elif right == '<unarni_operator> <cast_izraz>':
-        cast_izraz(node.children[1])
+        type_, _ = cast_izraz(node.children[1])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        return Type.int, False
     else:
         pass
 
