@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from collections import defaultdict
 
 from DataTypes import *
 
@@ -22,67 +23,32 @@ class Node:
 
 class TableNode:
 
-    def __init__(self, data: dict = {}, parent: Node = None):
-        if data is None:
-            data = {}
+    def __init__(self, parent: Node = None, ):
         self.parent = parent
         self.children = []
-        self.data = {}
+        self.vars = {}  # ime -> tip
+        self.declarations = {}  # ime -> ([arg1, arg2, ...] ili void, povratna_vr)
+        if parent is None:
+            self.definitions = {}  # ime -> ([arg1, arg2, ...] ili void, povratna_vr)
         # {key: (ime var ili fje, True za var i False za fju) ->
-        # value: (tip za var, za fju touple ([lista_argumenata], povratna_vrijednost)}
+        # value: (tip za var, za fju touple ([lista_argumenata], povratna_vrijednost, is_defined)}
+        self.function = ()  # ako je djelokrug za funkciju treba znati tip fje (identifikator, [lista_arg], pov_vr)
 
-    def search_var(self, identifier):
+    def search(self, identifier):
         node = self
         x = None
         while node is not None:
-            if x := node.data.get((identifier, True)) is not None:
+            if x := node.vars.get(identifier) is not None:
+                break
+            if x := node.declarations.get(identifier) is not None:
                 break
             node = node.parent
         return x
 
 
 data_table = TableNode()
-
-
-# Od zavrsnih znakova gramatike, jedino IDN identifikator moze biti l-izraz i to samo ako predstavlja varijablu
-# brojevnog tipa (char ili int) bez const-kvalifikatora. Identifikator koji predstavlja funkciju ili niz nije l-izraz.
-def is_l_expression(type_: Type):
-    if type_.value == 'char' or type_.value == 'int':
-        return True
-    return False
-
-
-def is_castable(from_type: Type, to_type: Type):
-    if from_type == to_type:
-        return True
-    if from_type == Type.int and to_type == Type.char:
-        return True
-    elif from_type == Type.char and to_type == Type.int:
-        return True
-    elif from_type == Type.char and to_type == Type.const_char:
-        return True
-    elif from_type == Type.const_char and to_type == Type.char:
-        return True
-    elif from_type == Type.int and to_type == Type.const_int:
-        return True
-    elif from_type == Type.const_int and to_type == Type.int:
-        return True
-    elif from_type == Type.int_array and to_type == Type.const_int_array:
-        return True
-    elif from_type == Type.char_array and to_type == Type.const_char_array:
-        return True
-    return False
-
-
-def array_to_single(array_type: Type):
-    if array_type == Type.int_array:
-        return Type.int
-    elif array_type == Type.char_array:
-        return Type.char
-    elif array_type == Type.const_int_array:
-        return Type.const_int
-    elif array_type == Type.const_char_array:
-        return Type.const_char
+all_declarations = defaultdict(list)
+# ime -> [([arg1, arg2, ...] ili void, povratna_vr), ...] jedna deklaracija moze imati vise tipova (radi provjere fje kasnije)
 
 
 def dfs_print(root_: Node, prefix=''):
@@ -129,10 +95,11 @@ def primarni_izraz(node: Node):
 
     if right == 'IDN':
         child = node.children[0]
-        if data := data_table.search_var(child.data[2]) is None:
+        if data := data_table.search(child.data[2]) is None:
             print(f'<primarni_izraz> ::= {child}')
             exit(0)
-        return data.type, is_l_expression(data.type)
+        # data: (tip za var, za fju touple ([lista_argumenata], povratna_vrijednost)}
+        return data, is_l_expression(data)
 
     elif right == 'BROJ':
         child = node.children[0]
