@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from collections import defaultdict
 
-from DataTypes import *
+from lab3.DataTypes import *
 
 
 class Node:
@@ -23,7 +23,7 @@ class Node:
 
 class TableNode:
 
-    def __init__(self, parent: Node = None, ):
+    def __init__(self, parent: TableNode = None):
         self.parent = parent
         self.children = []
         self.vars = {}  # ime -> tip
@@ -44,7 +44,7 @@ class TableNode:
         return x
 
 
-data_table = TableNode()
+data_table = global_data_table = TableNode()
 all_declarations = defaultdict(list)
 
 
@@ -480,15 +480,30 @@ def izraz(node: Node):
         pass
 
 
-def slozena_naredba(node: Node):
+def slozena_naredba(node: Node, function=None, params_types=None, params_names=None):
+
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
+    global data_table
+    new_node = TableNode(parent=data_table)
+    data_table.children.append(new_node)
+    data_table = new_node
+
+    if function is not None:
+        data_table.function = function
+
+    if params_names is not None:
+        for index, name in enumerate(params_names):
+            data_table.vars[name] = params_types[index]
 
     if right == 'L_VIT_ZAGRADA <lista_naredbi> D_VIT_ZAGRADA':
         lista_naredbi(node.children[1])
+        data_table = data_table.parent
 
     elif right == 'L_VIT_ZAGRADA <lista_deklaracija> <lista_naredbi> D_VIT_ZAGRADA':
         lista_deklaracija(node.children[1])
         lista_naredbi(node.children[2])
+        data_table = data_table.parent
 
     else:
         pass
@@ -657,29 +672,40 @@ def definicija_funkcije(node: Node):
 
     if right == '<ime_tipa> IDN L_ZAGRADA KR_VOID D_ZAGRADA <slozena_naredba>':
         type_ = ime_tipa(node.children[0])
-        if 'const' in type_.value:
+        x = None
+        if ('const' in type_.value
+                or node.children[1][2] in global_data_table.definitions.keys()
+                or (x := global_data_table.declarations.get(node.children[1][2])) is not None and
+                not (x[0] == Type.void and x[1] == type_)):
             terminate(name, node.children)
-        # todo
-        '''todo 3. ne postoji prije definirana funkcija imena IDN.ime
-            4. ako postoji deklaracija imena IDN.ime u globalnom djelokrugu onda je pripadni
-            tip te deklaracije funkcija(void → <ime_tipa>.tip)
-            5. zabiljeˇzi definiciju i deklaraciju funkcije'''
-        slozena_naredba(node.children[5])
 
+        global_data_table.definitions[node.children[1][2]] = (Type.void, type_)
+        if x is None:
+            global_data_table.declarations[node.children[1][2]] = (Type.void, type_)
+        slozena_naredba(node.children[5], function=(node.children[1][2], Type.void, type_))
 
     elif right == '<ime_tipa> IDN L_ZAGRADA <lista_parametara> D_ZAGRADA <slozena_naredba>':
         type_ = ime_tipa(node.children[0])
-        if 'const' in type_.value:
+        if('const' in type_.value
+                or node.children[1][2] in global_data_table.definitions.keys()):
             terminate(name, node.children)
-        # todo
-        '''todo 3. ne postoji prije definirana funkcija imena IDN.ime
-            4. provjeri(<lista_parametara>)
-            5. ako postoji deklaracija imena IDN.ime u globalnom djelokrugu onda je pripadni
-            tip te deklaracije funkcija(<lista_parametara>.tipovi → <ime_tipa>.tip)
-            6. zabiljeˇzi definiciju i deklaraciju funkcije
-            7. provjeri(<slozena_naredba>) uz parametre funkcije koriste´ci <lista_parametara>.tipovi
-            i <lista_parametara>.imena.
-'''
+
+        types, names = lista_parametara(node.children[2])
+        x = None
+        if x := global_data_table.declarations.get(node.children[1][2]) is not None:
+            if not(x[0] == types and x[1] == type_):
+                terminate(name, node.children)
+
+        global_data_table.definitions[node.children[1][2]] = (types, type_)
+        if x is None:
+            global_data_table.declarations[node.children[1][2]] = (types, type_)
+
+        slozena_naredba(
+            node.children[5],
+            function=(node.children[1][2], types, type_),
+            params_types=types,
+            params_names=names
+        )
 
     else:
         pass
@@ -712,7 +738,7 @@ def deklaracija_parametra(node: Node):
         type_ = ime_tipa(node.children[0])
         if type_ == Type.void:
             terminate(name, node.children)
-        return type_, #todo provjeriti return
+        return type_,  # todo provjeriti return
 
     elif right == '<ime_tipa> IDN L_UGL_ZAGRADA D_UGL_ZAGRADA':
         pass
