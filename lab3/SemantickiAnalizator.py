@@ -443,7 +443,7 @@ def izraz_naredba(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == 'TOCKAZAREZ':
-        pass
+        return Type.int
 
     elif right == '<izraz> TOCKAZAREZ':
         type_, _ = izraz(node.children[0])
