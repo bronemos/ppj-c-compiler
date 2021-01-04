@@ -30,8 +30,6 @@ class TableNode:
         self.declarations = {}  # ime -> ([arg1, arg2, ...] ili void, povratna_vr)
         if parent is None:
             self.definitions = {}  # ime -> ([arg1, arg2, ...] ili void, povratna_vr)
-        # {key: (ime var ili fje, True za var i False za fju) ->
-        # value: (tip za var, za fju tuple ([lista_argumenata], povratna_vrijednost, is_defined)}
         self.function = ()  # ako je djelokrug za funkciju treba znati tip fje (identifikator, [lista_arg], pov_vr)
 
     def search(self, identifier):
@@ -125,7 +123,6 @@ def primarni_izraz(node: Node):
             terminate(name, node.children)
         return Type.char, False
 
-
     elif right == 'L_ZAGRADA <izraz> D_ZAGRADA':
         return izraz(node.children[1])
     else:
@@ -133,7 +130,6 @@ def primarni_izraz(node: Node):
 
 
 def postfiks_izraz(node: Node):
-    # TODO provjeriti returnove
     name = '<postfiks_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -151,25 +147,25 @@ def postfiks_izraz(node: Node):
         return type_, is_l_expression(type_)
 
     elif right == '<postfiks_izraz> L_ZAGRADA D_ZAGRADA':
-        type_, _ = postfiks_izraz(node.children[0])
-        if type_ != Type.void:
+        function_type, _ = postfiks_izraz(node.children[0])
+        if function_type[0] != Type.void:
             terminate(name, node.children)
-
-        return  # tip funkcije, False
+        return function_type[1], False
 
     elif right == '<postfiks_izraz> L_ZAGRADA <lista_argumenata> D_ZAGRADA':
-        postfiks_izraz(node.children[0])
-        lista_argumenata(node.children[2])
-        return  # tip, False
+        function_type, _ = postfiks_izraz(node.children[0])
+        arg_types = lista_argumenata(node.children[2])
+        if len(function_type[0]) != len(arg_types):
+            terminate(name, node.children)
+        for index, arg_type in enumerate(arg_types):
+            if not is_castable(arg_type, function_type[0][index]):
+                terminate(name, node.children)
+        return function_type[1], False
 
-    elif right == '<postfiks_izraz> OP_INC':
-        # TODO provjeriti
-        postfiks_izraz(node.children[0])
-        return Type.int, False
-
-    elif right == '<postfiks_izraz> OP_DEC':
-        # TODO provjeriti
-        postfiks_izraz(node.children[0])
+    elif right == '<postfiks_izraz> OP_INC' or right == '<postfiks_izraz> OP_DEC':
+        type_, l_expression = postfiks_izraz(node.children[0])
+        if not is_castable(type_, Type.int) or not l_expression:
+            terminate(name, node.children)
         return Type.int, False
 
     else:
@@ -177,12 +173,15 @@ def postfiks_izraz(node: Node):
 
 
 def lista_argumenata(node: Node):
-    # TODO prov
+    name = '<lista_argumenata>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<izraz_pridruzivanja>':
-        return izraz_pridruzivanja(node.children[0])
+        return [izraz_pridruzivanja(node.children[0])[0]]
+
     elif right == '<lista_argumenata> ZAREZ <izraz_pridruzivanja>':
-        return lista_argumenata(node.children[0]) + lista_argumenata(node.children[2])
+        return lista_argumenata(node.children[0]) + [izraz_pridruzivanja(node.children[2])[0]]
+
     else:
         pass
 
