@@ -39,22 +39,30 @@ def is_l_expression(type_: Type):
 def is_castable(from_type: Type, to_type: Type):
     if from_type == to_type:
         return True
-    if from_type == Type.int and to_type == Type.char:
-        return True
-    elif from_type == Type.char and to_type == Type.int:
-        return True
-    elif from_type == Type.char and to_type == Type.const_char:
-        return True
-    elif from_type == Type.const_char and to_type == Type.char:
-        return True
-    elif from_type == Type.int and to_type == Type.const_int:
-        return True
-    elif from_type == Type.const_int and to_type == Type.int:
-        return True
-    elif from_type == Type.int_array and to_type == Type.const_int_array:
-        return True
-    elif from_type == Type.char_array and to_type == Type.const_char_array:
-        return True
+
+    elif from_type == Type.int:
+        if to_type == Type.char or to_type == Type.const_char or to_type == Type.const_int:
+            return True
+
+    elif from_type == Type.const_int:
+        if to_type == Type.char or to_type == Type.const_char or to_type == Type.int:
+            return True
+
+    elif from_type == Type.char:
+        if to_type == Type.const_int or to_type == Type.int or to_type == Type.const_char:
+            return True
+
+    elif from_type == Type.const_char:
+        if to_type == Type.const_int or to_type == Type.int or to_type == Type.char:
+            return True
+
+    elif from_type == Type.int_array:
+        if to_type == Type.const_int_array or to_type == Type.const_char_array:
+            return True
+
+    elif from_type == Type.char_array:
+        if to_type == Type.const_char_array or to_type == Type.const_int_array:
+            return True
     return False
 
 
