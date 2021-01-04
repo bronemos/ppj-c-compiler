@@ -283,107 +283,198 @@ def multiplikativni_izraz(node: Node):
 
 
 def aditivni_izraz(node: Node):
+    name = '<aditivni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<multiplikativni_izraz>':
-        pass
-    elif right == '<aditivni_izraz> PLUS <multiplikativni_izraz>':
-        pass
-    elif right == '<aditivni_izraz> MINUS <multiplikativni_izraz>':
-        pass
+        return multiplikativni_izraz(node.children[0])
+
+    elif (right == '<aditivni_izraz> PLUS <multiplikativni_izraz>'
+          or right == '<aditivni_izraz> MINUS <multiplikativni_izraz>'):
+        type_, _ = aditivni_izraz(node.children[0])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        type_, _ = multiplikativni_izraz(node.children[2])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        return Type.int, False
+
     else:
         pass
 
 
 def odnosni_izraz(node: Node):
+    name = '<odnosni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<aditivni_izraz>':
-        pass
-    elif right == '<odnosni_izraz> OP_LT <aditivni_izraz>':
-        pass
-    elif right == '<odnosni_izraz> OP_GT <aditivni_izraz>':
-        pass
-    elif right == '<odnosni_izraz> OP_LTE <aditivni_izraz>':
-        pass
-    elif right == '<odnosni_izraz> OP_GTE <aditivni_izraz>':
-        pass
+        return aditivni_izraz(node.children[0])
+
+    elif (right == '<odnosni_izraz> OP_LT <aditivni_izraz>'
+          or right == '<odnosni_izraz> OP_GT <aditivni_izraz>'
+          or right == '<odnosni_izraz> OP_LTE <aditivni_izraz>'
+          or right == '<odnosni_izraz> OP_GTE <aditivni_izraz>'):
+        type_, _ = odnosni_izraz(node.children[0])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        type_, _ = aditivni_izraz(node.children[2])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        return Type.int, False
+
     else:
         pass
 
 
 def jednakosni_izraz(node: Node):
+    name = '<jednakosni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<odnosni_izraz>':
-        pass
-    elif right == '<jednakosni_izraz> OP_EQ <odnosni_izraz>':
-        pass
-    elif right == '<jednakosni_izraz> OP_NEQ <odnosni_izraz>':
+        return odnosni_izraz(node.children[0])
+
+    elif (right == '<jednakosni_izraz> OP_EQ <odnosni_izraz>'
+          or right == '<jednakosni_izraz> OP_NEQ <odnosni_izraz>'):
+        type_, _ = jednakosni_izraz(node.children[0])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        type_, _ = odnosni_izraz(node.children[2])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        return Type.int, False
+
+    else:
         pass
 
 
 def bin_i_izraz(node: Node):
+    name = '<bin_i_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<jednakosni_izraz>':
-        pass
+        return jednakosni_izraz(node.children[0])
+
     elif right == '<bin_i_izraz> OP_BIN_I <jednakosni_izraz>':
-        pass
+        type_, _ = bin_i_izraz(node.children[0])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        type_, _ = jednakosni_izraz(node.children[2])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        return Type.int, False
+
     else:
         pass
 
 
 def bin_xili_izraz(node: Node):
+    name = '<bin_xili_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<bin_i_izraz>':
-        pass
+        return bin_i_izraz(node.children[0])
+
     elif right == '<bin_xili_izraz> OP_BIN_XILI <bin_i_izraz>':
-        pass
+        type_, _ = bin_xili_izraz(node.children[0])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        type_, _ = bin_i_izraz(node.children[2])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        return Type.int, False
+
     else:
         pass
 
 
 def bin_ili_izraz(node: Node):
+    name = '<bin_ili_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<bin_xili_izraz>':
-        pass
+        return bin_xili_izraz(node.children[0])
+
     elif right == '<bin_ili_izraz> OP_BIN_ILI <bin_xili_izraz>':
-        pass
+        type_, _ = bin_ili_izraz(node.children[0])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        type_, _ = bin_xili_izraz(node.children[2])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        return Type.int, False
+
     else:
         pass
 
 
 def log_i_izraz(node: Node):
+    name = '<log_i_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<bin_ili_izraz>':
-        pass
+        return bin_ili_izraz(node.children[0])
+
     elif right == '<log_i_izraz> OP_I <bin_ili_izraz>':
-        pass
+        type_, _ = log_i_izraz(node.children[0])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        type_, _ = bin_ili_izraz(node.children[2])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        return Type.int, False
+
     else:
         pass
 
 
 def log_ili_izraz(node: Node):
+    name = '<log_ili_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<log_i_izraz>':
-        pass
+        return log_i_izraz(node.children[0])
+
     elif right == '<log_ili_izraz> OP_ILI <log_i_izraz>':
-        pass
+        type_, _ = log_ili_izraz(node.children[0])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        type_, _ = log_i_izraz(node.children[2])
+        if not is_castable(type_, Type.int):
+            terminate(name, node.children)
+        return Type.int, False
+
     else:
         pass
 
 
 def izraz_pridruzivanja(node: Node):
+    name = '<izraz_pridruzivanja>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<log_ili_izraz>':
-        pass
+        return log_ili_izraz(node.children[0])
+
     elif right == '<postfiks_izraz> OP_PRIDRUZI <izraz_pridruzivanja>':
-        pass
+        type_post, l_expression = postfiks_izraz(node.children[0])
+        if not l_expression:
+            terminate(name, node.children)
+        type_prid, _ = izraz_pridruzivanja(node.children[2])
+        if not is_castable(type_prid, type_post):
+            terminate(name, node.children)
+        return type_post, False
 
 
 def izraz(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+
     if right == '<izraz_pridruzivanja>':
-        pass
+        return izraz_pridruzivanja(node.children[0])
+
     elif right == '<izraz> ZAREZ <izraz_pridruzivanja>':
-        pass
+        izraz(node.children[0])
+        type_, _ = izraz_pridruzivanja(node.children[2])
+        return type_, False
+
     else:
         pass
 
