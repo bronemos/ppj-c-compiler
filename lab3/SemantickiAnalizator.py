@@ -125,6 +125,7 @@ def primarni_izraz(node: Node):
 
     elif right == 'L_ZAGRADA <izraz> D_ZAGRADA':
         return izraz(node.children[1])
+
     else:
         pass
 
@@ -651,36 +652,66 @@ def vanjska_deklaracija(node: Node):
 
 
 def definicija_funkcije(node: Node):
+    name = '<definicija_funkcije>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<ime_tipa> IDN L_ZAGRADA KR_VOID D_ZAGRADA <slozena_naredba>':
-        pass
+        type_ = ime_tipa(node.children[0])
+        if 'const' in type_.value:
+            terminate(name, node.children)
+        # todo
+        '''todo 3. ne postoji prije definirana funkcija imena IDN.ime
+            4. ako postoji deklaracija imena IDN.ime u globalnom djelokrugu onda je pripadni
+            tip te deklaracije funkcija(void → <ime_tipa>.tip)
+            5. zabiljeˇzi definiciju i deklaraciju funkcije'''
+        slozena_naredba(node.children[5])
+
 
     elif right == '<ime_tipa> IDN L_ZAGRADA <lista_parametara> D_ZAGRADA <slozena_naredba>':
-        pass
+        type_ = ime_tipa(node.children[0])
+        if 'const' in type_.value:
+            terminate(name, node.children)
+        # todo
+        '''todo 3. ne postoji prije definirana funkcija imena IDN.ime
+            4. provjeri(<lista_parametara>)
+            5. ako postoji deklaracija imena IDN.ime u globalnom djelokrugu onda je pripadni
+            tip te deklaracije funkcija(<lista_parametara>.tipovi → <ime_tipa>.tip)
+            6. zabiljeˇzi definiciju i deklaraciju funkcije
+            7. provjeri(<slozena_naredba>) uz parametre funkcije koriste´ci <lista_parametara>.tipovi
+            i <lista_parametara>.imena.
+'''
 
     else:
         pass
 
 
 def lista_parametara(node: Node):
+    name = '<lista_parametara>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<deklaracija_parametra>':
-        pass
+        type_, name_ = deklaracija_parametra(node.children[0])
+        return [type_, ], [name_, ]
 
     elif right == '<lista_parametara> ZAREZ <deklaracija_parametra>':
-        pass
+        types, names = lista_parametara(node.children[0])
+        type_, name_ = deklaracija_parametra(node.children[2])
+        if name_ in names:
+            terminate(name, node.children)
 
     else:
         pass
 
 
 def deklaracija_parametra(node: Node):
+    name = '<deklaracija_parametra>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<ime_tipa> IDN':
-        pass
+        type_ = ime_tipa(node.children[0])
+        if type_ == Type.void:
+            terminate(name, node.children)
+        return type_, #todo provjeriti return
 
     elif right == '<ime_tipa> IDN L_UGL_ZAGRADA D_UGL_ZAGRADA':
         pass
@@ -690,29 +721,34 @@ def deklaracija_parametra(node: Node):
 
 
 def lista_deklaracija(node: Node):
+    name = '<lista_deklaracija>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<deklaracija>':
-        pass
+        deklaracija(node.children[0])
 
     elif right == '<lista_deklaracija> <deklaracija>':
-        pass
+        lista_deklaracija(node.children[0])
+        deklaracija(node.children[1])
 
     else:
         pass
 
 
 def deklaracija(node: Node):
+    name = '<deklaracija>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<ime_tipa> <lista_init_deklaratora> TOCKAZAREZ':
-        pass
+        type_ = ime_tipa(node.children[0])
+
 
     else:
         pass
 
 
 def lista_init_deklaratora(node: Node):
+    name = '<lista_init_deklaratora>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<init_deklarator>':
@@ -726,6 +762,7 @@ def lista_init_deklaratora(node: Node):
 
 
 def init_deklarator(node: Node):
+    name = '<init_deklarator>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<izravni_deklarator>':
@@ -739,6 +776,7 @@ def init_deklarator(node: Node):
 
 
 def izravni_deklarator(node: Node):
+    name = '<izravni_deklarator>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == 'IDN':
@@ -758,6 +796,7 @@ def izravni_deklarator(node: Node):
 
 
 def inicijalizator(node: Node):
+    name = '<inicijalizator>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<izraz_pridruzivanja>':
@@ -771,6 +810,7 @@ def inicijalizator(node: Node):
 
 
 def lista_izraza_pridruzivanja(node: Node):
+    name = '<lista_izraza_pridruzivanja>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<izraz_pridruzivanja>':
