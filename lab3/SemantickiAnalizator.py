@@ -742,48 +742,65 @@ def deklaracija(node: Node):
 
     if right == '<ime_tipa> <lista_init_deklaratora> TOCKAZAREZ':
         type_ = ime_tipa(node.children[0])
-
+        lista_init_deklaratora(node.children[1], type_)
 
     else:
         pass
 
 
-def lista_init_deklaratora(node: Node):
+def lista_init_deklaratora(node: Node, inh_property):
     name = '<lista_init_deklaratora>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<init_deklarator>':
-        pass
+        init_deklarator(node.children[0], inh_property)
 
     elif right == '<lista_init_deklaratora> ZAREZ <init_deklarator>':
-        pass
+        lista_init_deklaratora(node.children[0], inh_property)
+        init_deklarator(node.children[2], inh_property)
 
     else:
         pass
 
 
-def init_deklarator(node: Node):
+def init_deklarator(node: Node, inh_property):
     name = '<init_deklarator>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<izravni_deklarator>':
-        pass
+        type_ = izravni_deklarator(node.children[0], inh_property)
+        if 'const' in type_.value:
+            terminate(name, node.children)
 
     elif right == '<izravni_deklarator> OP_PRIDRUZI <inicijalizator>':
-        pass
+        type_d, el_count_d = izravni_deklarator(node.children[0], inh_property)
+        type_i, el_count_i = inicijalizator(node.children[2])
+        if 'array' not in type_d.value and type_d != Type.void:
+            if not is_castable(type_i, type_d):
+                terminate(name, node.children)
+        elif 'array' in type_d.value:
+            if not el_count_i <= el_count_d:
+                terminate(name, node.children)
+            #todo za svaki U iz <inicijalizator>.tipovi vrijedi U ∼ T
+        else:
+            terminate(name, node.children)
 
     else:
         pass
 
 
-def izravni_deklarator(node: Node):
+def izravni_deklarator(node: Node, inh_property):
+    #todo
     name = '<izravni_deklarator>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == 'IDN':
-        pass
+        if inh_property == Type.void:
+            terminate(name, node.children)
 
     elif right == 'IDN L_UGL_ZAGRADA BROJ D_UGL_ZAGRADA':
+        if inh_property == Type.void:
+            terminate(name, node.children)
         pass
 
     elif right == 'IDN L_ZAGRADA KR_VOID D_ZAGRADA':
