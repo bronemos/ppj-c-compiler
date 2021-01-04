@@ -30,7 +30,7 @@ class TableNode:
         self.declarations = {}  # ime -> ([arg1, arg2, ...] ili void, povratna_vr)
         if parent is None:
             self.definitions = {}  # ime -> ([arg1, arg2, ...] ili void, povratna_vr)
-        self.function = ()  # ako je djelokrug za funkciju treba znati tip fje (identifikator, [lista_arg], pov_vr)
+        self.function = None  # ako je djelokrug za funkciju treba znati tip fje (identifikator, [lista_arg], pov_vr)
 
     def search(self, identifier):
         node = self
@@ -223,8 +223,8 @@ def cast_izraz(node: Node):
     elif right == 'L_ZAGRADA <ime_tipa> D_ZAGRADA <cast_izraz>':
         cast_type = ime_tipa(node.children[1])  # vraca samo tip
         expression_to_cast_type, _ = cast_izraz(node.children[3])
-        if not('int' in expression_to_cast_type.value or 'char' in expression_to_cast_type.value and
-           'int' in cast_type.value or 'char' in cast_type.value):
+        if not ('int' in expression_to_cast_type.value or 'char' in expression_to_cast_type.value and
+                'int' in cast_type.value or 'char' in cast_type.value):
             terminate(name, node.children)
         return cast_type, False
 
@@ -439,7 +439,7 @@ def naredba(node: Node):
 
 
 def izraz_naredba(node: Node):
-    #todo zavrsiti
+    # todo zavrsiti
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == 'TOCKAZAREZ':
@@ -504,20 +504,30 @@ def naredba_petlje(node: Node):
 
 
 def naredba_skoka(node: Node):
-    #todo zavrsiti
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+    name = '<naredba_skoka'
 
-    if right == 'KR_CONTINUE TOCKAZAREZ':
-        pass
-
-    elif right == 'KR_BREAK TOCKAZAREZ':
-        pass
+    if right == 'KR_CONTINUE TOCKAZAREZ' or right == 'KR_BREAK TOCKAZAREZ':
+        help_node = node
+        while help_node.parent is not None:
+            help_node = help_node.parent
+            if help_node.data == '<naredba_petlje>':
+                return
+        terminate(name, node.children)
+        return
 
     elif right == 'KR_RETURN TOCKAZAREZ':
-        pass
+        function = data_table.function
+        if not (function is not None and function[2] == Type.void):
+            terminate(name, node.children)
+        return
 
     elif right == 'KR_RETURN <izraz> TOCKAZAREZ':
-        pass
+        type_, _ = izraz(node.children[1])
+        function = data_table.function
+        if not (function is not None and is_castable(type_, function[2])):
+            terminate(name, node.children)
+        return
 
     else:
         pass
