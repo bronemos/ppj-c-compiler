@@ -31,7 +31,7 @@ class TableNode:
         if parent is None:
             self.definitions = {}  # ime -> ([arg1, arg2, ...] ili void, povratna_vr)
         # {key: (ime var ili fje, True za var i False za fju) ->
-        # value: (tip za var, za fju touple ([lista_argumenata], povratna_vrijednost, is_defined)}
+        # value: (tip za var, za fju tuple ([lista_argumenata], povratna_vrijednost, is_defined)}
         self.function = ()  # ako je djelokrug za funkciju treba znati tip fje (identifikator, [lista_arg], pov_vr)
 
     def search(self, identifier):
@@ -48,7 +48,13 @@ class TableNode:
 
 data_table = TableNode()
 all_declarations = defaultdict(list)
+
+
 # ime -> [([arg1, arg2, ...] ili void, povratna_vr), ...] jedna deklaracija moze imati vise tipova (radi provjere fje kasnije)
+
+def terminate(name: str, children: list):
+    print(f'{name} ::= {" ".join(children)}')
+    exit(0)
 
 
 def dfs_print(root_: Node, prefix=''):
@@ -91,36 +97,34 @@ def fill_tree(parent: Node, tree_list: list):
 
 
 def primarni_izraz(node: Node):
+    name = '<primarni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == 'IDN':
         child = node.children[0]
         if data := data_table.search(child.data[2]) is None:
-            print(f'<primarni_izraz> ::= {child}')
-            exit(0)
+            terminate(name, node.children)
         # data: (tip za var, za fju touple ([lista_argumenata], povratna_vrijednost)}
         return data, is_l_expression(data)
 
     elif right == 'BROJ':
         child = node.children[0]
         if not is_int(child.data[2]):
-            print(f'<primarni_izraz> ::= {child}')
-            exit(0)
+            terminate(name, node.children)
         return Type.int, False
 
     elif right == 'ZNAK':
         child = node.children[0]
         if not is_char(child.data[2]):
-            print(f'<primarni_izraz> ::= {child}')
-            exit(0)
+            terminate(name, node.children)
         return Type.char, False
 
     elif right == 'NIZ_ZNAKOVA':
         child = node.children[0]
         if not is_const_char_array(child.data[2]):
-            print(f'<primarni_izraz> ::= {child}')
-            exit(0)
-        return Type.const_char_array, False
+            terminate(name, node.children)
+        return Type.char, False
+
 
     elif right == 'L_ZAGRADA <izraz> D_ZAGRADA':
         return izraz(node.children[1])
@@ -130,6 +134,7 @@ def primarni_izraz(node: Node):
 
 def postfiks_izraz(node: Node):
     # TODO provjeriti returnove
+    name = '<postfiks_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<primarni_izraz>':
@@ -137,21 +142,20 @@ def postfiks_izraz(node: Node):
 
     elif right == '<postfiks_izraz> L_UGL_ZAGRADA <izraz> D_UGL_ZAGRADA':
         type_postfix, _ = postfiks_izraz(node.children[0])
-        if type_postfix != Type.int_array and type_postfix != Type.const_int_array and type_postfix != Type.char_array and type_postfix != Type.const_char_array:
-            print(
-                f'<postfiks_izraz> ::= {node.children[0]} {node.children[1]} {node.children[2]} {node.children[3]}')
-            exit(0)
+        if 'array' not in type_postfix.value:
+            terminate(name, node.children)
         type_izraz, _ = izraz(node.children[2])
         if not is_castable(type_izraz, Type.int):
-            print(
-                f'<postfiks_izraz> ::= {node.children[0]} {node.children[1]} {node.children[2]} {node.children[3]}')
-            exit(0)
+            terminate(name, node.children)
         type_ = array_to_single(type_postfix)
         return type_, is_l_expression(type_)
 
     elif right == '<postfiks_izraz> L_ZAGRADA D_ZAGRADA':
-        type_, l_value = postfiks_izraz(node.children[0])
-        return  type_[1], False
+        type_, _ = postfiks_izraz(node.children[0])
+        if type_ != Type.void:
+            terminate(name, node.children)
+
+        return  # tip funkcije, False
 
     elif right == '<postfiks_izraz> L_ZAGRADA <lista_argumenata> D_ZAGRADA':
         postfiks_izraz(node.children[0])

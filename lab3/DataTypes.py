@@ -11,6 +11,7 @@ class Type(Enum):
     const_char_array = 'const_char_array'
     int_array = 'int_array'
     const_int_array = 'const_int_array'
+    void = 'void'
 
 
 def is_int(num):
