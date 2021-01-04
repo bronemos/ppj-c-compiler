@@ -204,42 +204,47 @@ def unarni_izraz(node: Node):
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
         return Type.int, False
+
     else:
         pass
 
 
 def unarni_operator(node: Node):
-    right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
-    if right == 'PLUS':
-        pass
-    elif right == 'MINUS':
-        pass
-    elif right == 'OP_TILDA':
-        pass
-    elif right == 'OP_NEG':
-        pass
-    else:
-        pass
+    return
 
 
 def cast_izraz(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+    name = '<cast_izraz>'
+
     if right == '<unarni_izraz>':
         return unarni_izraz(node.children[0])
+
     elif right == 'L_ZAGRADA <ime_tipa> D_ZAGRADA <cast_izraz>':
-        ime_tipa(node.children[1])
-        cast_izraz(node.children[3])
-        # todo return
+        cast_type = ime_tipa(node.children[1])  # vraca samo tip
+        expression_to_cast_type, _ = cast_izraz(node.children[3])
+        if not('int' in expression_to_cast_type.value or 'char' in expression_to_cast_type.value and
+           'int' in cast_type.value or 'char' in cast_type.value):
+            terminate(name, node.children)
+        return cast_type, False
+
     else:
         pass
 
 
 def ime_tipa(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+    name = '<ime_tipa>'
+
     if right == '<specifikator_tipa>':
         return specifikator_tipa(node.children[0])
+
     elif right == 'KR_CONST <specifikator_tipa>':
-        pass
+        type_ = specifikator_tipa(node.children[1])
+        if type_ == Type.void:
+            terminate(name, node.children)
+        return convert_to_const(type_)
+
     else:
         pass
 
@@ -247,24 +252,33 @@ def ime_tipa(node: Node):
 def specifikator_tipa(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     if right == 'KR_VOID':
-        pass
+        return Type.void
     elif right == 'KR_CHAR':
-        pass
+        return Type.char
     elif right == 'KR_INT':
-        pass
+        return Type.int
     else:
         pass
 
 
 def multiplikativni_izraz(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
+    name = '<multiplikativni_izraz>'
+
     if right == '<cast_izraz>':
-        pass
-    elif right == '<multiplikativni_izraz> OP_PUTA <cast_izraz>':
-        pass
-    elif right == '<multiplikativni_izraz> OP_DIJELI <cast_izraz>':
-        pass
-    elif right == '<multiplikativni_izraz> OP_MOD <cast_izraz>':
+        return cast_izraz(node.children[0])
+
+    elif (right == '<multiplikativni_izraz> OP_PUTA <cast_izraz>'
+          or right == '<multiplikativni_izraz> OP_DIJELI <cast_izraz>'
+          or right == '<multiplikativni_izraz> OP_MOD <cast_izraz>'):
+
+        type_m, _ = multiplikativni_izraz(node.children[0])
+        type_c, _ = cast_izraz(node.children[2])
+        if not (is_castable(type_m, Type.int) and is_castable(type_c, Type.int)):
+            terminate(name, node.children)
+        return Type.int, False
+
+    else:
         pass
 
 

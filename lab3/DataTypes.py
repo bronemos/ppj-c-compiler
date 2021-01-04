@@ -75,3 +75,13 @@ def array_to_single(array_type: Type):
         return Type.const_int
     elif array_type == Type.const_char_array:
         return Type.const_char
+
+
+def convert_to_const(type_: Type):
+    dict_ = {
+        Type.int: Type.const_int,
+        Type.char: Type.const_char,
+        Type.char_array: Type.const_char_array,
+        Type.int_array: Type.const_int_array,
+    }
+    return dict_.get(type_)
