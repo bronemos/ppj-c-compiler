@@ -530,7 +530,6 @@ def naredba(node: Node):
 
 
 def izraz_naredba(node: Node):
-    # todo zavrsiti
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == 'TOCKAZAREZ':
