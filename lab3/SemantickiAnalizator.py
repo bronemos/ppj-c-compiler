@@ -120,7 +120,7 @@ def primarni_izraz(node: Node):
         if not is_const_char_array(child.data[2]):
             print(f'<primarni_izraz> ::= {child}')
             exit(0)
-        return Type.char, False
+        return Type.const_char_array, False
 
     elif right == 'L_ZAGRADA <izraz> D_ZAGRADA':
         return izraz(node.children[1])
@@ -150,8 +150,8 @@ def postfiks_izraz(node: Node):
         return type_, is_l_expression(type_)
 
     elif right == '<postfiks_izraz> L_ZAGRADA D_ZAGRADA':
-        postfiks_izraz(node.children[0])
-        return  # tip funkcije, False
+        type_, l_value = postfiks_izraz(node.children[0])
+        return  type_[1], False
 
     elif right == '<postfiks_izraz> L_ZAGRADA <lista_argumenata> D_ZAGRADA':
         postfiks_izraz(node.children[0])
