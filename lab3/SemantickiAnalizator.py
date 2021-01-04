@@ -698,6 +698,7 @@ def lista_parametara(node: Node):
         type_, name_ = deklaracija_parametra(node.children[2])
         if name_ in names:
             terminate(name, node.children)
+        return types + [type_, ], names + [name_, ]
 
     else:
         pass
