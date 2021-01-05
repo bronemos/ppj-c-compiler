@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import re
 from collections import defaultdict
 
 from lab3.DataTypes import *
@@ -487,7 +488,6 @@ def izraz(node: Node):
 
 
 def slozena_naredba(node: Node, function=None, params_types=None, params_names=None):
-
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     global data_table
@@ -695,14 +695,14 @@ def definicija_funkcije(node: Node):
 
     elif right == '<ime_tipa> IDN L_ZAGRADA <lista_parametara> D_ZAGRADA <slozena_naredba>':
         type_ = ime_tipa(node.children[0])
-        if('const' in type_.value
+        if ('const' in type_.value
                 or node.children[1].data[2] in global_data_table.definitions.keys()):
             terminate(name, node.children)
 
         types, names = lista_parametara(node.children[2])
         x = None
         if x := global_data_table.declarations.get(node.children[1].data[2]) is not None:
-            if not(x[0] == types and x[1] == type_):
+            if not (x[0] == types and x[1] == type_):
                 terminate(name, node.children)
 
         global_data_table.definitions[node.children[1].data[2]] = (types, type_)
@@ -755,7 +755,7 @@ def deklaracija_parametra(node: Node):
         type_ = ime_tipa(node.children[0])
         if type_ == Type.void:
             terminate(name, node.children)
-        return  convert_to_array(type_), node.children[1].data[2]
+        return convert_to_array(type_), node.children[1].data[2]
 
     else:
         pass
@@ -809,7 +809,8 @@ def init_deklarator(node: Node, inh_property):
 
     if right == '<izravni_deklarator>':
         type_, _ = izravni_deklarator(node.children[0], inh_property)
-        if type(type_) is not tuple and 'const' in type_.value:  # TODO treba vidjeti sto s tupleom i na jos dosta mjesta
+        if type(
+                type_) is not tuple and 'const' in type_.value:  # TODO treba vidjeti sto s tupleom i na jos dosta mjesta
             terminate(name, node.children)
 
     elif right == '<izravni_deklarator> OP_PRIDRUZI <inicijalizator>':
@@ -832,7 +833,6 @@ def init_deklarator(node: Node, inh_property):
 
 
 def izravni_deklarator(node: Node, inh_property):
-
     name = '<izravni_deklarator>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -895,12 +895,18 @@ def inicijalizator(node: Node):
             if type(help_node.data) is tuple:
                 if help_node.data[0] == 'NIZ_ZNAKOVA':
                     string = help_node.data[2]
-                    cnt = 0
-                    if string[0] == '{':
-                        pass  # TODO
-                    br_elem = 3 + 1  # TODO
-                    types = [Type.char for i in range(br_elem)]
-                    return types, br_elem
+                    string_re = re.compile(r'^{\s(\'.*\'[\s|,\s])*}$')
+                    int_re = re.compile(r'^{\s(\d*[\s|,\s])*}$')
+                    if (str_matched := string_re.match(string)) or int_re.match(string):
+                        array = eval('[' + string[1:len(string)-1] + ']')
+                        el_count = len(array)
+                        if str_matched:
+                            if '\0' not in array:
+                                el_count += 1
+                    else:
+                        el_count = len(string) - 1
+                    types = [Type.char] * el_count
+                    return types, el_count
         return type_, None
 
     elif right == 'L_VIT_ZAGRADA <lista_izraza_pridruzivanja> D_VIT_ZAGRADA':
