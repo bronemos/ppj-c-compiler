@@ -165,7 +165,7 @@ def postfiks_izraz(node: Node):
     elif right == '<postfiks_izraz> L_ZAGRADA <lista_argumenata> D_ZAGRADA':
         function_type, _ = postfiks_izraz(node.children[0])
         arg_types = lista_argumenata(node.children[2])
-        if len(function_type[0]) != len(arg_types):
+        if function_type[0] == Type.void or len(function_type[0]) != len(arg_types):
             terminate(name, node.children)
         for index, arg_type in enumerate(arg_types):
             if not is_castable(arg_type, function_type[0][index]):
@@ -911,13 +911,14 @@ def inicijalizator(node: Node):
             help_node = help_node.children[0]
             if type(help_node.data) is tuple:
                 if help_node.data[0] == 'NIZ_ZNAKOVA':
-                    # TODO: for petlja treba
+                    # TODO: for petlja treba major bug
                     string = help_node.data[2]\
                         .replace('\\t', 't')\
                         .replace('\\n', 'n')\
                         .replace('\\"', '"')\
                         .replace('\\\'', '\'')\
                         .replace('\\\\', '\\')
+                    const_char = re.compile(r'^\".*\"')
                     string_re = re.compile(r'^{\s(\'.*\'[\s|,\s])*}$')
                     int_re = re.compile(r'^{\s(\d*[\s|,\s])*}$')
                     if (str_matched := string_re.match(string)) or int_re.match(string):

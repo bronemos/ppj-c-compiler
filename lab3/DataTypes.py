@@ -15,7 +15,12 @@ class Type(Enum):
 
 
 def is_int(num):
-    return -2147483648 <= int(num) <= 2147483647
+    try:
+        num = int(num)
+    except ValueError:
+        return False
+    return -2147483648 <= num <= 2147483647
+
 
 
 def is_char(char):
