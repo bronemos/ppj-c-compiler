@@ -1,1 +1,0 @@
-<lista_parametara> ::= <lista_parametara> ZAREZ(1,,) <deklaracija_parametra>

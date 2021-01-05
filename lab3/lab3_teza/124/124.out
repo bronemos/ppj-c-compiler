@@ -1,1 +1,0 @@
-<unarni_izraz> ::= OP_DEC(3,--) <unarni_izraz>
