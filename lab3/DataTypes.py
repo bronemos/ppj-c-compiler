@@ -85,3 +85,13 @@ def convert_to_const(type_: Type):
         Type.int_array: Type.const_int_array,
     }
     return dict_.get(type_)
+
+
+def convert_to_array(type_: Type):
+    dict_ = {
+        Type.int: Type.int_array,
+        Type.char: Type.char_array,
+        Type.const_int: Type.const_int_array,
+        Type.const_char: Type.const_char_array,
+    }
+    return dict_.get(type_)

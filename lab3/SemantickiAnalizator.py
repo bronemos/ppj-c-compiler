@@ -36,9 +36,9 @@ class TableNode:
         node = self
         x = None
         while node is not None:
-            if x := node.vars.get(identifier) is not None:
+            if (x := node.vars.get(identifier)) is not None:
                 break
-            if x := node.declarations.get(identifier) is not None:
+            if (x := node.declarations.get(identifier)) is not None:
                 break
             node = node.parent
         return x
@@ -51,7 +51,13 @@ all_declarations = defaultdict(list)
 # ime -> [([arg1, arg2, ...] ili void, povratna_vr), ...] jedna deklaracija moze imati vise tipova (radi provjere fje kasnije)
 
 def terminate(name: str, children: list):
-    print(f'{name} ::= {" ".join(children)}')
+    string = f'{name} ::='
+    for child in children:
+        if type(child.data) is tuple:
+            string += f' {child.data[0]}({child.data[1]},{child.data[2]})'
+        else:
+            string += f' {child.data}'
+    print(string)
     exit(0)
 
 
@@ -100,7 +106,7 @@ def primarni_izraz(node: Node):
 
     if right == 'IDN':
         child = node.children[0]
-        if data := data_table.search(child.data[2]) is None:
+        if (data := data_table.search(child.data[2])) is None:
             terminate(name, node.children)
         # data: (tip za var, za fju touple ([lista_argumenata], povratna_vrijednost)}
         return data, is_l_expression(data)
@@ -674,35 +680,40 @@ def definicija_funkcije(node: Node):
         type_ = ime_tipa(node.children[0])
         x = None
         if ('const' in type_.value
-                or node.children[1][2] in global_data_table.definitions.keys()
-                or (x := global_data_table.declarations.get(node.children[1][2])) is not None and
+                or node.children[1].data[2] in global_data_table.definitions.keys()
+                or (x := global_data_table.declarations.get(node.children[1].data[2])) is not None and
                 not (x[0] == Type.void and x[1] == type_)):
             terminate(name, node.children)
 
-        global_data_table.definitions[node.children[1][2]] = (Type.void, type_)
+        global_data_table.definitions[node.children[1].data[2]] = (Type.void, type_)
         if x is None:
-            global_data_table.declarations[node.children[1][2]] = (Type.void, type_)
-        slozena_naredba(node.children[5], function=(node.children[1][2], Type.void, type_))
+            global_data_table.declarations[node.children[1].data[2]] = (Type.void, type_)
+        # all_declarations[node.children[1].data[2]].append((Type.void, type_))
+        # ne treba jer je tu sigurno i definirana
+
+        slozena_naredba(node.children[5], function=(node.children[1].data[2], Type.void, type_))
 
     elif right == '<ime_tipa> IDN L_ZAGRADA <lista_parametara> D_ZAGRADA <slozena_naredba>':
         type_ = ime_tipa(node.children[0])
         if('const' in type_.value
-                or node.children[1][2] in global_data_table.definitions.keys()):
+                or node.children[1].data[2] in global_data_table.definitions.keys()):
             terminate(name, node.children)
 
         types, names = lista_parametara(node.children[2])
         x = None
-        if x := global_data_table.declarations.get(node.children[1][2]) is not None:
+        if x := global_data_table.declarations.get(node.children[1].data[2]) is not None:
             if not(x[0] == types and x[1] == type_):
                 terminate(name, node.children)
 
-        global_data_table.definitions[node.children[1][2]] = (types, type_)
+        global_data_table.definitions[node.children[1].data[2]] = (types, type_)
         if x is None:
-            global_data_table.declarations[node.children[1][2]] = (types, type_)
+            global_data_table.declarations[node.children[1].data[2]] = (types, type_)
+        # all_declarations[node.children[1].data[2]].append((types, type_))
+        # ne treba jer je tu sigurno i definirana
 
         slozena_naredba(
             node.children[5],
-            function=(node.children[1][2], types, type_),
+            function=(node.children[1].data[2], types, type_),
             params_types=types,
             params_names=names
         )
@@ -738,10 +749,13 @@ def deklaracija_parametra(node: Node):
         type_ = ime_tipa(node.children[0])
         if type_ == Type.void:
             terminate(name, node.children)
-        return type_,  # todo provjeriti return
+        return type_, node.children[1].data[2]
 
     elif right == '<ime_tipa> IDN L_UGL_ZAGRADA D_UGL_ZAGRADA':
-        pass
+        type_ = ime_tipa(node.children[0])
+        if type_ == Type.void:
+            terminate(name, node.children)
+        return  convert_to_array(type_), node.children[1].data[2]
 
     else:
         pass
@@ -794,46 +808,76 @@ def init_deklarator(node: Node, inh_property):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<izravni_deklarator>':
-        type_ = izravni_deklarator(node.children[0], inh_property)
-        if 'const' in type_.value:
+        type_, _ = izravni_deklarator(node.children[0], inh_property)
+        if type(type_) is not tuple and 'const' in type_.value:  # TODO treba vidjeti sto s tupleom i na jos dosta mjesta
             terminate(name, node.children)
 
     elif right == '<izravni_deklarator> OP_PRIDRUZI <inicijalizator>':
         type_d, el_count_d = izravni_deklarator(node.children[0], inh_property)
-        type_i, el_count_i = inicijalizator(node.children[2])
+        type_i, el_count_i = inicijalizator(node.children[2])  # ako je array vraca listu tipova inace samo tip
+        if type(type_d) is tuple:  # ako je fja vratit ce touple
+            terminate(name, node.children)
         if 'array' not in type_d.value and type_d != Type.void:
             if not is_castable(type_i, type_d):
                 terminate(name, node.children)
-        elif 'array' in type_d.value:
-            if not el_count_i <= el_count_d:
+        else:  # 'array' in type_d.value:
+            if not el_count_i <= el_count_d:  # ostaje mjesto za /0
                 terminate(name, node.children)
-            #todo za svaki U iz <inicijalizator>.tipovi vrijedi U ∼ T
-        else:
-            terminate(name, node.children)
+            for type_inicijalizator in type_i:
+                if not is_castable(type_inicijalizator, type_d):
+                    terminate(name, node.children)
 
     else:
         pass
 
 
 def izravni_deklarator(node: Node, inh_property):
-    #todo
+
     name = '<izravni_deklarator>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == 'IDN':
         if inh_property == Type.void:
             terminate(name, node.children)
+        if not (data_table.vars.get(node.children[0].data[2]) is None and
+                data_table.declarations.get(node.children[0].data[2]) is None):
+            terminate(name, node.children)
+        data_table.vars[node.children[0].data[2]] = inh_property
+        return inh_property, None
 
     elif right == 'IDN L_UGL_ZAGRADA BROJ D_UGL_ZAGRADA':
         if inh_property == Type.void:
             terminate(name, node.children)
-        pass
+        if not (data_table.vars.get(node.children[0].data[2]) is None and
+                data_table.declarations.get(node.children[0].data[2]) is None):
+            terminate(name, node.children)
+        if not (0 < node.children[2].data[2] <= 1024):
+            terminate(name, node.children)
+        data_table.vars[node.children[0].data[2]] = convert_to_array(inh_property)
+        return convert_to_array(inh_property), node.children[2].data[2]
 
     elif right == 'IDN L_ZAGRADA KR_VOID D_ZAGRADA':
-        pass
+        if data_table.vars.get(node.children[0].data[2]) is not None:
+            terminate(name, node.children)
+        if x := data_table.declarations.get(node.children[0].data[2]) is not None:
+            if x != (Type.void, inh_property):
+                terminate(name, node.children)
+        else:
+            data_table.declarations[node.children[0].data[2]] = (Type.void, inh_property)
+            all_declarations[node.children[0].data[2]].append((Type.void, inh_property))
+        return (Type.void, inh_property), None
 
     elif right == 'IDN L_ZAGRADA <lista_parametara> D_ZAGRADA':
-        pass
+        types, names = lista_parametara(node.children[2])
+        if data_table.vars.get(node.children[0].data[2]) is not None:
+            terminate(name, node.children)
+        if x := data_table.declarations.get(node.children[0].data[2]) is not None:
+            if x != (types, inh_property):
+                terminate(name, node.children)
+        else:
+            data_table.declarations[node.children[0].data[2]] = (types, inh_property)
+            all_declarations[node.children[0].data[2]].append((types, inh_property))
+        return (types, inh_property), None
 
     else:
         pass
@@ -844,10 +888,23 @@ def inicijalizator(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<izraz_pridruzivanja>':
-        pass
+        type_ = izraz_pridruzivanja(node.children[0])
+        help_node = node
+        while len(help_node.children) != 0:
+            help_node = help_node.children[0]
+            if type(help_node.data) is tuple:
+                if help_node.data[0] == 'NIZ_ZNAKOVA':
+                    string = help_node.data[2]
+                    cnt = 0
+                    if string[0] == '{':
+                        pass  # TODO
+                    br_elem = 3 + 1  # TODO
+                    types = [Type.char for i in range(br_elem)]
+                    return types, br_elem
+        return type_, None
 
     elif right == 'L_VIT_ZAGRADA <lista_izraza_pridruzivanja> D_VIT_ZAGRADA':
-        pass
+        return lista_izraza_pridruzivanja(node.children[1])
 
     else:
         pass
@@ -858,10 +915,12 @@ def lista_izraza_pridruzivanja(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<izraz_pridruzivanja>':
-        pass
+        return [izraz_pridruzivanja(node.children[0])[0]], 1
 
     elif right == '<lista_izraza_pridruzivanja> ZAREZ <izraz_pridruzivanja>':
-        pass
+        list_, num = lista_izraza_pridruzivanja(node.children[0])
+        new_element = izraz_pridruzivanja(node.children[0])[0]
+        return list_ + [new_element], num + 1
 
     else:
         pass
@@ -873,4 +932,4 @@ root = Node(tree_list[0])
 
 fill_tree(root, tree_list)
 
-dfs_print(root)
+prijevodna_jedinica(root)
