@@ -31,7 +31,7 @@ def is_const_char_array(string):
 # Od zavrsnih znakova gramatike, jedino IDN identifikator moze biti l-izraz i to samo ako predstavlja varijablu
 # brojevnog tipa (char ili int) bez const-kvalifikatora. Identifikator koji predstavlja funkciju ili niz nije l-izraz.
 def is_l_expression(type_: Type):
-    if type_.value == 'char' or type_.value == 'int':
+    if type(type_) is not tuple and (type_.value == 'char' or type_.value == 'int'):
         return True
     return False
 
@@ -41,11 +41,11 @@ def is_castable(from_type: Type, to_type: Type):
         return True
 
     elif from_type == Type.int:
-        if to_type == Type.char or to_type == Type.const_char or to_type == Type.const_int:
+        if to_type == Type.const_int:
             return True
 
     elif from_type == Type.const_int:
-        if to_type == Type.char or to_type == Type.const_char or to_type == Type.int:
+        if to_type == Type.int:
             return True
 
     elif from_type == Type.char:
@@ -57,11 +57,11 @@ def is_castable(from_type: Type, to_type: Type):
             return True
 
     elif from_type == Type.int_array:
-        if to_type == Type.const_int_array or to_type == Type.const_char_array:
+        if to_type == Type.const_int_array:
             return True
 
     elif from_type == Type.char_array:
-        if to_type == Type.const_char_array or to_type == Type.const_int_array:
+        if to_type == Type.const_char_array:
             return True
     return False
 

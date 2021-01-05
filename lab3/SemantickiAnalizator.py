@@ -4,7 +4,7 @@ import sys
 import re
 from collections import defaultdict
 
-from lab3.DataTypes import *
+from DataTypes import *
 
 
 class Node:
@@ -86,7 +86,8 @@ def fill_tree(parent: Node, tree_list: list):
             if non_terminal.match(node_data):
                 parent.children.append(Node(node_data, parent))
             else:
-                parent.children.append(Node(tuple(node_data.split(' ')), parent, True))
+                node_data_tuple = (node_data.split(' ')[0], node_data.split(' ')[1], ' '.join(node_data.split(' ')[2:]))
+                parent.children.append(Node(node_data_tuple, parent, True))
             parent = parent.children[-1]
         else:
             while space_count <= previous_space_count:
@@ -95,7 +96,8 @@ def fill_tree(parent: Node, tree_list: list):
             if non_terminal.match(node_data):
                 parent.children.append(Node(node_data, parent))
             else:
-                parent.children.append(Node(tuple(node_data.split(' ')), parent, True))
+                node_data_tuple = (node_data.split(' ')[0], node_data.split(' ')[1], ' '.join(node_data.split(' ')[2:]))
+                parent.children.append(Node(node_data_tuple, parent, True))
             parent = parent.children[-1]
 
         previous_space_count = space_count
@@ -128,7 +130,7 @@ def primarni_izraz(node: Node):
         child = node.children[0]
         if not is_const_char_array(child.data[2]):
             terminate(name, node.children)
-        return Type.char, False
+        return Type.char_array, False
 
     elif right == 'L_ZAGRADA <izraz> D_ZAGRADA':
         return izraz(node.children[1])
@@ -231,8 +233,11 @@ def cast_izraz(node: Node):
     elif right == 'L_ZAGRADA <ime_tipa> D_ZAGRADA <cast_izraz>':
         cast_type = ime_tipa(node.children[1])  # vraca samo tip
         expression_to_cast_type, _ = cast_izraz(node.children[3])
-        if not ('int' in expression_to_cast_type.value or 'char' in expression_to_cast_type.value and
-                'int' in cast_type.value or 'char' in cast_type.value):
+        if type(expression_to_cast_type) is tuple:
+            terminate(name, node.children)
+        if not (('int' in expression_to_cast_type.value or 'char' in expression_to_cast_type.value) and
+                ('int' in cast_type.value or 'char' in cast_type.value)) or \
+                'array' in expression_to_cast_type.value or 'array' in cast_type.value:
             terminate(name, node.children)
         return cast_type, False
 
@@ -491,12 +496,15 @@ def slozena_naredba(node: Node, function=None, params_types=None, params_names=N
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     global data_table
+    old_function = data_table.function
     new_node = TableNode(parent=data_table)
     data_table.children.append(new_node)
     data_table = new_node
 
     if function is not None:
         data_table.function = function
+    else:
+        data_table.function = old_function
 
     if params_names is not None:
         for index, name in enumerate(params_names):
@@ -523,7 +531,7 @@ def lista_naredbi(node: Node):
 
     elif right == '<lista_naredbi> <naredba>':
         lista_naredbi(node.children[0])
-        lista_naredbi(node.children[1])
+        naredba(node.children[1])
 
     else:
         pass
@@ -617,7 +625,7 @@ def naredba_petlje(node: Node):
 
 def naredba_skoka(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
-    name = '<naredba_skoka'
+    name = '<naredba_skoka>'
 
     if right == 'KR_CONTINUE TOCKAZAREZ' or right == 'KR_BREAK TOCKAZAREZ':
         help_node = node
@@ -678,10 +686,13 @@ def definicija_funkcije(node: Node):
 
     if right == '<ime_tipa> IDN L_ZAGRADA KR_VOID D_ZAGRADA <slozena_naredba>':
         type_ = ime_tipa(node.children[0])
-        x = None
+        if global_data_table.vars.get(node.children[1].data[2]) is not None:
+            terminate(name, node.children)
+
+        x = global_data_table.declarations.get(node.children[1].data[2])
         if ('const' in type_.value
                 or node.children[1].data[2] in global_data_table.definitions.keys()
-                or (x := global_data_table.declarations.get(node.children[1].data[2])) is not None and
+                or x is not None and
                 not (x[0] == Type.void and x[1] == type_)):
             terminate(name, node.children)
 
@@ -699,9 +710,13 @@ def definicija_funkcije(node: Node):
                 or node.children[1].data[2] in global_data_table.definitions.keys()):
             terminate(name, node.children)
 
-        types, names = lista_parametara(node.children[2])
-        x = None
-        if x := global_data_table.declarations.get(node.children[1].data[2]) is not None:
+        types, names = lista_parametara(node.children[3])
+
+        if global_data_table.vars.get(node.children[1].data[2]) is not None:
+            terminate(name, node.children)
+
+        x = global_data_table.declarations.get(node.children[1].data[2])
+        if x is not None:
             if not (x[0] == types and x[1] == type_):
                 terminate(name, node.children)
 
@@ -816,16 +831,18 @@ def init_deklarator(node: Node, inh_property):
     elif right == '<izravni_deklarator> OP_PRIDRUZI <inicijalizator>':
         type_d, el_count_d = izravni_deklarator(node.children[0], inh_property)
         type_i, el_count_i = inicijalizator(node.children[2])  # ako je array vraca listu tipova inace samo tip
-        if type(type_d) is tuple:  # ako je fja vratit ce touple
+        if type(type_d) is tuple:  # ako je fja vratit ce tuple
             terminate(name, node.children)
         if 'array' not in type_d.value and type_d != Type.void:
             if not is_castable(type_i, type_d):
                 terminate(name, node.children)
         else:  # 'array' in type_d.value:
-            if not el_count_i <= el_count_d:  # ostaje mjesto za /0
+            if el_count_i is None:
+                terminate(name, node.children)
+            if not (el_count_i <= el_count_d):
                 terminate(name, node.children)
             for type_inicijalizator in type_i:
-                if not is_castable(type_inicijalizator, type_d):
+                if not is_castable(type_inicijalizator, array_to_single(type_d)):
                     terminate(name, node.children)
 
     else:
@@ -851,10 +868,10 @@ def izravni_deklarator(node: Node, inh_property):
         if not (data_table.vars.get(node.children[0].data[2]) is None and
                 data_table.declarations.get(node.children[0].data[2]) is None):
             terminate(name, node.children)
-        if not (0 < node.children[2].data[2] <= 1024):
+        if not (0 < int(node.children[2].data[2]) <= 1024):
             terminate(name, node.children)
         data_table.vars[node.children[0].data[2]] = convert_to_array(inh_property)
-        return convert_to_array(inh_property), node.children[2].data[2]
+        return convert_to_array(inh_property), int(node.children[2].data[2])
 
     elif right == 'IDN L_ZAGRADA KR_VOID D_ZAGRADA':
         if data_table.vars.get(node.children[0].data[2]) is not None:
@@ -871,7 +888,7 @@ def izravni_deklarator(node: Node, inh_property):
         types, names = lista_parametara(node.children[2])
         if data_table.vars.get(node.children[0].data[2]) is not None:
             terminate(name, node.children)
-        if x := data_table.declarations.get(node.children[0].data[2]) is not None:
+        if (x := data_table.declarations.get(node.children[0].data[2])) is not None:
             if x != (types, inh_property):
                 terminate(name, node.children)
         else:
@@ -888,21 +905,27 @@ def inicijalizator(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<izraz_pridruzivanja>':
-        type_ = izraz_pridruzivanja(node.children[0])
+        type_, _ = izraz_pridruzivanja(node.children[0])
         help_node = node
         while len(help_node.children) != 0:
             help_node = help_node.children[0]
             if type(help_node.data) is tuple:
                 if help_node.data[0] == 'NIZ_ZNAKOVA':
-                    string = help_node.data[2]
+                    # TODO: for petlja treba
+                    string = help_node.data[2]\
+                        .replace('\\t', 't')\
+                        .replace('\\n', 'n')\
+                        .replace('\\"', '"')\
+                        .replace('\\\'', '\'')\
+                        .replace('\\\\', '\\')
                     string_re = re.compile(r'^{\s(\'.*\'[\s|,\s])*}$')
                     int_re = re.compile(r'^{\s(\d*[\s|,\s])*}$')
                     if (str_matched := string_re.match(string)) or int_re.match(string):
-                        array = eval('[' + string[1:len(string)-1] + ']')
+                        array = eval('[' + string[1:len(string) - 1] + ']')
                         el_count = len(array)
-                        if str_matched:
-                            if '\0' not in array:
-                                el_count += 1
+                        # if str_matched:
+                        #     if '\\0' not in array:
+                        #         el_count += 1
                     else:
                         el_count = len(string) - 1
                     types = [Type.char] * el_count
@@ -925,7 +948,7 @@ def lista_izraza_pridruzivanja(node: Node):
 
     elif right == '<lista_izraza_pridruzivanja> ZAREZ <izraz_pridruzivanja>':
         list_, num = lista_izraza_pridruzivanja(node.children[0])
-        new_element = izraz_pridruzivanja(node.children[0])[0]
+        new_element = izraz_pridruzivanja(node.children[2])[0]
         return list_ + [new_element], num + 1
 
     else:
@@ -939,3 +962,21 @@ root = Node(tree_list[0])
 fill_tree(root, tree_list)
 
 prijevodna_jedinica(root)
+
+if (x := global_data_table.definitions.get('main')) is not None:
+    if x != (Type.void, Type.int):
+        print('main')
+        exit(0)
+else:
+    print('main')
+    exit(0)
+
+for function_name, declaration_list in all_declarations.items():
+    x = None
+    if (x := global_data_table.definitions.get(function_name)) is None:
+        print('funkcija')
+        exit(0)
+    for declaration in declaration_list:
+        if x != declaration:
+            print('funkcija')
+            exit(0)
