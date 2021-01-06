@@ -6,6 +6,10 @@ from collections import defaultdict
 
 from DataTypes import *
 
+string_re = re.compile(r'^\".*\"')
+char_array_re = re.compile(r'^{\s(\'.*\'(\s|,\s))*}$')
+int_re = re.compile(r'^{\s(\d*(\s|,\s))*}$')
+
 
 class Node:
 
@@ -912,10 +916,6 @@ def inicijalizator(node: Node):
             if type(help_node.data) is tuple:
                 if help_node.data[0] == 'NIZ_ZNAKOVA':
                     string = help_node.data[2]
-
-                    string_re = re.compile(r'^\".*\"')
-                    char_array_re = re.compile(r'^{\s(\'.*\'(\s|,\s))*}$')
-                    int_re = re.compile(r'^{\s(\d*(\s|,\s))*}$')
 
                     if (str_matched := char_array_re.match(string)) or int_re.match(string):
                         array = eval('[' + string[1:len(string) - 1] + ']')
