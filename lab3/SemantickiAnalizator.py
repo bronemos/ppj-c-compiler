@@ -925,7 +925,16 @@ def inicijalizator(node: Node):
                                 el_count += 1
 
                     elif string_re.match(string):
-                        el_count = len(string) - 1
+                        el_count = 0
+                        is_prefixed = False
+                        for char in string[1:-1]:
+                            if char == '\\':
+                                is_prefixed = True
+                            elif is_prefixed:
+                                el_count += 1
+                                is_prefixed = False
+                            else:
+                                el_count += 1
 
                     else:
                         terminate(name, node.children)
