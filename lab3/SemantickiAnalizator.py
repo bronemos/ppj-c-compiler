@@ -925,18 +925,6 @@ def inicijalizator(node: Node):
                                 el_count += 1
 
                     elif string_re.match(string):
-                        is_prefixed = False
-                        if string == '"\\"':
-                            terminate(name, node.children)
-                        for char in string[1:-1]:
-                            if char == '\\':
-                                is_prefixed = True
-                            elif char == '"' and not is_prefixed:
-                                terminate(name, node.children)
-                            elif is_prefixed and char not in 'tn0\'"\\':
-                                terminate(name, node.children)
-                            else:
-                                is_prefixed = False
                         el_count = len(string) - 1
 
                     else:

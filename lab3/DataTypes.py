@@ -27,8 +27,16 @@ def is_char(char):
 
 
 def is_const_char_array(string):
-    string_re = re.compile(r'^\"((?!\\)[\x00-\xff]|\\\\|\\t|\\n|\\0|\\\'|\\\")*\"$')
-    return string_re.match(string)
+    string_re = re.compile(r'^\"((?!\\|\")[\x00-\xff]|\\\\|\\t|\\n|\\0|\\\'|\\\")*\"$')
+    if string_re.match(string):
+        return True
+    char_array_re = re.compile(r'^{\s(\'([\x00-\xff]|\\\\|\\t|\\n|\\0|\\\'|\\\")\'(\s|,\s))*}$')
+    if char_array_re.match(string):
+        return True
+    int_array_re = re.compile(r'^{\s(\d+(\s|,\s))*}$')
+    if int_array_re.match(string):
+        return True
+    return False
 
 
 # Od zavrsnih znakova gramatike, jedino IDN identifikator moze biti l-izraz i to samo ako predstavlja varijablu
