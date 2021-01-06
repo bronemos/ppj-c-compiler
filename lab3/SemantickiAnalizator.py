@@ -130,7 +130,7 @@ def primarni_izraz(node: Node):
         child = node.children[0]
         if not is_const_char_array(child.data[2]):
             terminate(name, node.children)
-        return Type.char_array, False
+        return Type.const_char_array, False
 
     elif right == 'L_ZAGRADA <izraz> D_ZAGRADA':
         return izraz(node.children[1])
