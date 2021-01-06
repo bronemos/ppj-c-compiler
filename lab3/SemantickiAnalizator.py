@@ -930,7 +930,7 @@ def inicijalizator(node: Node):
                         if string[:-2] != '\\0':
                             el_count = 1
                         for char in string[1:-1]:
-                            if char == '\\':
+                            if char == '\\' and not is_prefixed:
                                 is_prefixed = True
                             elif is_prefixed:
                                 el_count += 1
