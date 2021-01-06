@@ -911,24 +911,37 @@ def inicijalizator(node: Node):
             help_node = help_node.children[0]
             if type(help_node.data) is tuple:
                 if help_node.data[0] == 'NIZ_ZNAKOVA':
-                    # TODO: for petlja treba major bug
-                    string = help_node.data[2]\
-                        .replace('\\t', 't')\
-                        .replace('\\n', 'n')\
-                        .replace('\\"', '"')\
-                        .replace('\\\'', '\'')\
-                        .replace('\\\\', '\\')
-                    const_char = re.compile(r'^\".*\"')
-                    string_re = re.compile(r'^{\s(\'.*\'[\s|,\s])*}$')
-                    int_re = re.compile(r'^{\s(\d*[\s|,\s])*}$')
-                    if (str_matched := string_re.match(string)) or int_re.match(string):
+                    string = help_node.data[2]
+
+                    string_re = re.compile(r'^\".*\"')
+                    char_array_re = re.compile(r'^{\s(\'.*\'(\s|,\s))*}$')
+                    int_re = re.compile(r'^{\s(\d*(\s|,\s))*}$')
+
+                    if (str_matched := char_array_re.match(string)) or int_re.match(string):
                         array = eval('[' + string[1:len(string) - 1] + ']')
                         el_count = len(array)
-                        # if str_matched:
-                        #     if '\\0' not in array:
-                        #         el_count += 1
-                    else:
+                        if str_matched:
+                            if array[-1] != '\\0':
+                                el_count += 1
+
+                    elif string_re.match(string):
+                        is_prefixed = False
+                        if string == '"\\"':
+                            terminate(name, node.children)
+                        for char in string[1:-1]:
+                            if char == '\\':
+                                is_prefixed = True
+                            elif char == '"' and not is_prefixed:
+                                terminate(name, node.children)
+                            elif is_prefixed and char not in 'tn0\'"':
+                                terminate(name, node.children)
+                            else:
+                                is_prefixed = False
                         el_count = len(string) - 1
+
+                    else:
+                        terminate(name, node.children)
+
                     types = [Type.char] * el_count
                     return types, el_count
         return type_, None
