@@ -933,7 +933,7 @@ def inicijalizator(node: Node):
                                 is_prefixed = True
                             elif char == '"' and not is_prefixed:
                                 terminate(name, node.children)
-                            elif is_prefixed and char not in 'tn0\'"':
+                            elif is_prefixed and char not in 'tn0\'"\\':
                                 terminate(name, node.children)
                             else:
                                 is_prefixed = False
