@@ -6,6 +6,7 @@ string_re = re.compile(r'^\"((?!\\|\")[\x00-\xff]|\\\\|\\t|\\n|\\0|\\\'|\\\")*\"
 char_array_re = re.compile(r'^{\s(\'([\x00-\xff]|\\\\|\\t|\\n|\\0|\\\'|\\\")\'(\s|,\s))*}$')
 int_array_re = re.compile(r'^{\s(\d+(\s|,\s))*}$')
 
+
 class Type(Enum):
     int = 'int'
     const_int = 'const_int'
