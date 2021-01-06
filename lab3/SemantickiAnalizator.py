@@ -927,6 +927,8 @@ def inicijalizator(node: Node):
                     elif string_re.match(string):
                         el_count = 0
                         is_prefixed = False
+                        if string[:-2] != '\\0':
+                            el_count = 1
                         for char in string[1:-1]:
                             if char == '\\':
                                 is_prefixed = True
