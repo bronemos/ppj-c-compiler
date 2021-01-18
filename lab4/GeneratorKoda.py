@@ -18,6 +18,7 @@ frisc_global_variables = {}
 helper_identifier = 'HELPER_IDENTIFIER'
 global_name = None
 global_minus = False
+global_call = None
 
 
 class Node:
@@ -120,6 +121,7 @@ def primarni_izraz(node: Node):
     global global_name
     global global_minus
     global helper_identifier
+    global global_call
 
     name = '<primarni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
@@ -131,9 +133,22 @@ def primarni_izraz(node: Node):
         # data: (tip za var, za fju touple ([lista_argumenata], povratna_vrijednost)}
         # provjeri ima li varijable na stogu?
         help_table = data_table
-        frisc_function_definitions[data_table.function[0]] += \
-            f'\t\tLOAD R0, (G_{child.data[2]})\n' \
-            f'\t\tPUSH R0\n'
+        is_fun = False
+        if (x := global_data_table.definitions.get(child.data[2])) is not None:
+            mul = 0 if x[0] == Type.void else len(x)
+            global_call = f'\t\tCALL F_{child.data[2]}\n' + f'\t\tPOP R0\n' * mul + f'\t\tPUSH R6\n'
+            is_fun = True
+        while help_table is not None and not is_fun:
+            if data_table.declarations.get(child.data[2]) is not None:
+                mul = 0 if x[0] == Type.void else len(x)
+                global_call = f'\t\tCALL F_{child.data[2]}\n' + f'\t\tPOP R0\n' * mul + f'\t\tPUSH R6\n'
+                is_fun = True
+                break
+            help_table = help_table.parent
+        if not is_fun:
+            frisc_function_definitions[data_table.function[0]] += \
+                f'\t\tLOAD R0, (G_{child.data[2]})\n' \
+                f'\t\tPUSH R0\n'
         return data, is_l_expression(data)
 
     elif right == 'BROJ':
@@ -178,6 +193,8 @@ def primarni_izraz(node: Node):
 
 
 def postfiks_izraz(node: Node):
+    global global_call
+
     name = '<postfiks_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -198,6 +215,10 @@ def postfiks_izraz(node: Node):
         function_type, _ = postfiks_izraz(node.children[0])
         if function_type[0] != Type.void:
             terminate(name, node.children)
+
+        if global_call is not None:
+            frisc_function_definitions[data_table.function[0]] += global_call
+            global_call = None
         return function_type[1], False
 
     elif right == '<postfiks_izraz> L_ZAGRADA <lista_argumenata> D_ZAGRADA':
@@ -208,6 +229,9 @@ def postfiks_izraz(node: Node):
         for index, arg_type in enumerate(arg_types):
             if not is_castable(arg_type, function_type[0][index]):
                 terminate(name, node.children)
+        if global_call is not None:
+            frisc_function_definitions[data_table.function[0]] += global_call
+            global_call = None
         return function_type[1], False
 
     elif right == '<postfiks_izraz> OP_INC' or right == '<postfiks_izraz> OP_DEC':
