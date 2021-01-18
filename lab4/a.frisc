@@ -1,8 +1,0 @@
-	MOVE 40000, R7
-	CALL F_main
-	HALT
-F_main 	LOAD R6, (G_x)
-	PUSH R6
-	POP R6
-	RET
-G_x DW %D 72
