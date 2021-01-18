@@ -4,18 +4,19 @@ import sys
 import re
 from collections import defaultdict
 
-from DataTypes import *
+from lab4.DataTypes import *
 
 string_re = re.compile(r'^\".*\"')
 char_array_re = re.compile(r'^{\s(\'.*\'(\s|,\s))*}$')
 int_re = re.compile(r'^{\s(\d*(\s|,\s))*}$')
 
 a = open('a.frisc', 'w')
-a.write('\tMOVE 40000, R7\n\tCALL F_MAIN\n\tHALT\n')
+a.write('\tMOVE 40000, R7\n\tCALL F_main\n\tHALT\n')
 
 frisc_function_definitions = defaultdict(lambda: '')  # ime fje -> string?
 frisc_global_variables = {}
 helper_identifier = 'HELPER_IDENTIFIER'
+global_name = None
 
 
 class Node:
@@ -115,6 +116,7 @@ def fill_tree(parent: Node, tree_list: list):
 
 
 def primarni_izraz(node: Node):
+    global global_name
     name = '<primarni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -123,17 +125,24 @@ def primarni_izraz(node: Node):
         if (data := data_table.search(child.data[2])) is None:
             terminate(name, node.children)
         # data: (tip za var, za fju touple ([lista_argumenata], povratna_vrijednost)}
+        # provjeri ima li na stogu?
+        frisc_function_definitions[data_table.function[0]] += \
+            f'\tLOAD R6, (G_{child.data[2]})\n' \
+            f'\tPUSH R6\n'
         return data, is_l_expression(data)
 
     elif right == 'BROJ':
         child = node.children[0]
         if not is_int(child.data[2]):
             terminate(name, node.children)
-        if data_table.function is not None:
+        if data_table.parent is not None:
             frisc_global_variables[helper_identifier] = f'DW %D {number_decimal(child.data[2])}\n'
             frisc_function_definitions[data_table.function[0]] += \
                 f'\tLOAD R0, ({helper_identifier})\n' \
                 f'\tPUSH R0\n'
+        elif global_name is not None:
+            frisc_global_variables[global_name] = f'DW %D {number_decimal(child.data[2])}\n'
+            global_name = None
         return Type.int, False
 
     elif right == 'ZNAK':
@@ -871,6 +880,7 @@ def init_deklarator(node: Node, inh_property):
 
 
 def izravni_deklarator(node: Node, inh_property):
+    global global_name
     name = '<izravni_deklarator>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -880,7 +890,9 @@ def izravni_deklarator(node: Node, inh_property):
         if not (data_table.vars.get(node.children[0].data[2]) is None and
                 data_table.declarations.get(node.children[0].data[2]) is None):
             terminate(name, node.children)
-        data_table.vars[node.children[0].data[2]] = inh_property
+        global_name = f'G_{node.children[0].data[2]}'
+        if data_table.parent is None:
+            data_table.vars[node.children[0].data[2]] = inh_property
         return inh_property, None
 
     elif right == 'IDN L_UGL_ZAGRADA BROJ D_UGL_ZAGRADA':
@@ -1012,8 +1024,8 @@ for function_name, declaration_list in all_declarations.items():
             exit(0)
 
 for key, value in frisc_function_definitions.items():
-    a.write(f'F_{key.upper()} {value}')
+    a.write(f'F_{key} {value}')
 
 for key, value in frisc_global_variables.items():
-    a.write(f'{key.upper()} {value}')
+    a.write(f'{key} {value}')
 a.close()
