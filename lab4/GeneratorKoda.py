@@ -11,12 +11,13 @@ char_array_re = re.compile(r'^{\s(\'.*\'(\s|,\s))*}$')
 int_re = re.compile(r'^{\s(\d*(\s|,\s))*}$')
 
 a = open('a.frisc', 'w')
-a.write('\tMOVE 40000, R7\n\tCALL F_main\n\tHALT\n')
+a.write('\t\tMOVE 40000, R7\n\t\tCALL F_main\n\t\tHALT\n')
 
 frisc_function_definitions = defaultdict(lambda: '')  # ime fje -> string?
 frisc_global_variables = {}
 helper_identifier = 'HELPER_IDENTIFIER'
 global_name = None
+global_minus = False
 
 
 class Node:
@@ -117,6 +118,9 @@ def fill_tree(parent: Node, tree_list: list):
 
 def primarni_izraz(node: Node):
     global global_name
+    global global_minus
+    global helper_identifier
+
     name = '<primarni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -125,10 +129,11 @@ def primarni_izraz(node: Node):
         if (data := data_table.search(child.data[2])) is None:
             terminate(name, node.children)
         # data: (tip za var, za fju touple ([lista_argumenata], povratna_vrijednost)}
-        # provjeri ima li na stogu?
+        # provjeri ima li varijable na stogu?
+        help_table = data_table
         frisc_function_definitions[data_table.function[0]] += \
-            f'\tLOAD R6, (G_{child.data[2]})\n' \
-            f'\tPUSH R6\n'
+            f'\t\tLOAD R0, (G_{child.data[2]})\n' \
+            f'\t\tPUSH R0\n'
         return data, is_l_expression(data)
 
     elif right == 'BROJ':
@@ -136,12 +141,20 @@ def primarni_izraz(node: Node):
         if not is_int(child.data[2]):
             terminate(name, node.children)
         if data_table.parent is not None:
-            frisc_global_variables[helper_identifier] = f'DW %D {number_decimal(child.data[2])}\n'
+            if global_minus:
+                frisc_global_variables[helper_identifier] = f'DW %D -{number_decimal(child.data[2])}\n'
+            else:
+                frisc_global_variables[helper_identifier] = f'DW %D {number_decimal(child.data[2])}\n'
             frisc_function_definitions[data_table.function[0]] += \
-                f'\tLOAD R0, ({helper_identifier})\n' \
-                f'\tPUSH R0\n'
+                f'\t\tLOAD R0, ({helper_identifier})\n' \
+                f'\t\tPUSH R0\n'
+            helper_identifier += '1'
         elif global_name is not None:
-            frisc_global_variables[global_name] = f'DW %D {number_decimal(child.data[2])}\n'
+            if global_minus:
+                frisc_global_variables[global_name] = f'DW %D -{number_decimal(child.data[2])}\n'
+            else:
+                frisc_global_variables[global_name] = f'DW %D {number_decimal(child.data[2])}\n'
+            global_minus = False
             global_name = None
         return Type.int, False
 
@@ -235,6 +248,7 @@ def unarni_izraz(node: Node):
         return Type.int, False
 
     elif right == '<unarni_operator> <cast_izraz>':
+        unarni_operator(node.children[0])
         type_, _ = cast_izraz(node.children[1])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
@@ -245,6 +259,10 @@ def unarni_izraz(node: Node):
 
 
 def unarni_operator(node: Node):
+    global global_minus
+
+    if node.children[0].data[0] == 'MINUS':
+        global_minus = True
     return
 
 
@@ -335,6 +353,14 @@ def aditivni_izraz(node: Node):
         type_, _ = multiplikativni_izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+        if right == '<aditivni_izraz> PLUS <multiplikativni_izraz>':
+            if data_table.function is not None:
+                frisc_function_definitions[
+                    data_table.function[0]] += '\t\tPOP R1\n\t\tPOP R0\n\t\tADD R0, R1, R0\n\t\tPUSH R0\n'
+        else:
+            if data_table.function is not None:
+                frisc_function_definitions[
+                    data_table.function[0]] += '\t\tPOP R1\n\t\tPOP R0\n\t\tSUB R0, R1, R0\n\t\tPUSH R0\n'
         return Type.int, False
 
     else:
@@ -399,6 +425,10 @@ def bin_i_izraz(node: Node):
         type_, _ = jednakosni_izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+
+        if data_table.function is not None:
+            frisc_function_definitions[
+                data_table.function[0]] += '\t\tPOP R1\n\t\tPOP R0\n\t\tAND R0, R1, R0\n\t\tPUSH R0\n'
         return Type.int, False
 
     else:
@@ -419,6 +449,11 @@ def bin_xili_izraz(node: Node):
         type_, _ = bin_i_izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+
+        if data_table.function is not None:
+            frisc_function_definitions[
+                data_table.function[0]] += '\t\tPOP R1\n\t\tPOP R0\n\t\tXOR R0, R1, R0\n\t\tPUSH R0\n'
+
         return Type.int, False
 
     else:
@@ -439,6 +474,11 @@ def bin_ili_izraz(node: Node):
         type_, _ = bin_xili_izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+
+        if data_table.function is not None:
+            frisc_function_definitions[
+                data_table.function[0]] += '\t\tPOP R1\n\t\tPOP R0\n\t\tOR R0, R1, R0\n\t\tPUSH R0\n'
+
         return Type.int, False
 
     else:
@@ -675,8 +715,8 @@ def naredba_skoka(node: Node):
 
         if data_table.function is not None:
             frisc_function_definitions[data_table.function[0]] += \
-                f'\tPOP R6\n' \
-                f'\tRET\n'
+                f'\t\tPOP R6\n' \
+                f'\t\tRET\n'
         return
 
     else:
