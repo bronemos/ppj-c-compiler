@@ -42,6 +42,7 @@ class TableNode:
         self.parent = parent
         self.children = []
         self.vars = {}  # ime -> tip
+        self.function_params = []
         self.declarations = {}  # ime -> ([arg1, arg2, ...] ili void, povratna_vr)
         if parent is None:
             self.definitions = {}  # ime -> ([arg1, arg2, ...] ili void, povratna_vr)
@@ -134,6 +135,8 @@ def primarni_izraz(node: Node):
         # provjeri ima li varijable na stogu?
         help_table = data_table
         is_fun = False
+
+        # if i while obrada funkcije
         if (x := global_data_table.definitions.get(child.data[2])) is not None:
             mul = 0 if x[0] == Type.void else len(x)
             global_call = f'\t\tCALL F_{child.data[2]}\n' + f'\t\tPOP R0\n' * mul + f'\t\tPUSH R6\n'
@@ -145,10 +148,21 @@ def primarni_izraz(node: Node):
                 is_fun = True
                 break
             help_table = help_table.parent
+
+        # ako nije funkcija gleda varijablu
         if not is_fun:
-            frisc_function_definitions[data_table.function[0]] += \
-                f'\t\tLOAD R0, (G_{child.data[2]})\n' \
-                f'\t\tPUSH R0\n'
+            if child.data[2] in data_table.vars and data_table.parent is not None:
+                if child.data[2] in data_table.function_params:
+                    pos = (len(data_table.function_params) - data_table.function_params.index(child.data[2]) + 1) * 4
+                else:
+                    pos = ((list(data_table.vars.keys()).index(child.data[2])) - len(data_table.function_params)) * 4
+                frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, (R5+{pos})\n' \
+                                                                      f'\t\tPUSH R0\n'
+
+            else:
+                frisc_function_definitions[data_table.function[0]] += \
+                    f'\t\tLOAD R0, (G_{child.data[2]})\n' \
+                    f'\t\tPUSH R0\n'
         return data, is_l_expression(data)
 
     elif right == 'BROJ':
@@ -592,12 +606,14 @@ def slozena_naredba(node: Node, function=None, params_types=None, params_names=N
 
     if function is not None:
         data_table.function = function
+        frisc_function_definitions[data_table.function[0]] += f'\t\tMOVE R7, R5\n'
     else:
         data_table.function = old_function
 
     if params_names is not None:
         for index, name in enumerate(params_names):
             data_table.vars[name] = params_types[index]
+            data_table.function_params.append(name)
 
     if right == 'L_VIT_ZAGRADA <lista_naredbi> D_VIT_ZAGRADA':
         lista_naredbi(node.children[1])
