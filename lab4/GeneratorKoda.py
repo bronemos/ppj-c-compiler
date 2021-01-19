@@ -151,17 +151,30 @@ def primarni_izraz(node: Node):
 
         # ako nije funkcija gleda varijablu
         if not is_fun:
-            if child.data[2] in data_table.vars and data_table.parent is not None:
-                if child.data[2] in data_table.function_params:
-                    pos = (len(data_table.function_params) - data_table.function_params.index(child.data[2]) + 1) * 4
-                else:
-                    pos = ((list(data_table.vars.keys()).index(child.data[2])) - len(
-                        data_table.function_params) + 1) * -4
-                pos = f'+{pos}' if pos > 0 else pos
-                frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, (R5{pos})\n' \
-                                                                      f'\t\tPUSH R0\n'
+            pos = None
+            if data_table.parent is not None:
+                # if child.data[2] in data_table.vars and data_table.parent is not None:
+                help_table = data_table
+                while help_table.parent is not None:
+                    if child.data[2] in help_table.function_params:
+                        pos = (len(help_table.function_params) - help_table.function_params.index(
+                            child.data[2]) + 2) * 4
+                    elif child.data[2] in help_table.vars:
+                        pos = ((list(help_table.vars.keys()).index(child.data[2])) - len(
+                            help_table.function_params) + 1) * -4
+                    help_table = help_table.parent
 
-            else:
+                help_table = data_table
+                while help_table is not None:
+                    if help_table.function is not None:
+                        break
+                    help_table = help_table.parent
+                if pos is not None:
+                    pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
+                    frisc_function_definitions[help_table.function[0]] += f'\t\tLOAD R0, (R5{pos})\n' \
+                                                                          f'\t\tPUSH R0\n'
+
+            if pos is None:
                 frisc_function_definitions[data_table.function[0]] += \
                     f'\t\tLOAD R0, (G_{child.data[2]})\n' \
                     f'\t\tPUSH R0\n'
@@ -193,6 +206,17 @@ def primarni_izraz(node: Node):
         child = node.children[0]
         if not is_char(child.data[2]):
             terminate(name, node.children)
+
+        if data_table.parent is not None:
+            frisc_global_variables[helper_identifier] = f'DW %D {ord(child.data[2][1])}\n'
+            frisc_function_definitions[data_table.function[0]] += \
+                f'\t\tLOAD R0, ({helper_identifier})\n' \
+                f'\t\tPUSH R0\n'
+            helper_identifier += '1'
+        elif global_name is not None:
+            frisc_global_variables[global_name] = f'DW %D {ord(child.data[2][1])}\n'
+            global_name = None
+
         return Type.char, False
 
     elif right == 'NIZ_ZNAKOVA':
@@ -608,7 +632,7 @@ def slozena_naredba(node: Node, function=None, params_types=None, params_names=N
 
     if function is not None:
         data_table.function = function
-        frisc_function_definitions[data_table.function[0]] += f'\t\tMOVE R7, R5\n'
+        frisc_function_definitions[data_table.function[0]] += f'\t\tPUSH R5\n\t\tMOVE R7, R5\n'
     else:
         data_table.function = old_function
 
@@ -759,6 +783,7 @@ def naredba_skoka(node: Node):
             frisc_function_definitions[data_table.function[0]] += \
                 f'\t\tPOP R6\n' \
                 f'\t\tMOVE R5, R7\n' \
+                f'\t\tLOAD R5, (R7-4)\n' \
                 f'\t\tRET\n'
         return
 
