@@ -19,6 +19,10 @@ helper_identifier = 'HELPER_IDENTIFIER'
 global_name = None
 global_minus = False
 global_call = None
+label_after_if = 'HELPER_LABEL'
+is_if_from_else = False
+while_label = 'WHILE_LABEL'
+label_after_while = 'AFTER_WHILE'
 
 
 class Node:
@@ -288,6 +292,7 @@ def postfiks_izraz(node: Node):
         return function_type[1], False
 
     elif right == '<postfiks_izraz> OP_INC' or right == '<postfiks_izraz> OP_DEC':
+        # TODO: OP_INC
         type_, l_expression = postfiks_izraz(node.children[0])
         if not (is_castable(type_, Type.int) and l_expression):
             terminate(name, node.children)
@@ -319,6 +324,7 @@ def unarni_izraz(node: Node):
         return postfiks_izraz(node.children[0])
 
     elif right == 'OP_INC <unarni_izraz>' or right == 'OP_DEC <unarni_izraz>':
+        # TODO: OP_INC
         type_, l_expression = unarni_izraz(node.children[1])
         if not (l_expression and is_castable(type_, Type.int)):
             terminate(name, node.children)
@@ -404,7 +410,7 @@ def multiplikativni_izraz(node: Node):
     elif (right == '<multiplikativni_izraz> OP_PUTA <cast_izraz>'
           or right == '<multiplikativni_izraz> OP_DIJELI <cast_izraz>'
           or right == '<multiplikativni_izraz> OP_MOD <cast_izraz>'):
-
+        # TODO: napraviti operatore zbrajanjem i oduzimanjem u petlji
         type_m, _ = multiplikativni_izraz(node.children[0])
         type_c, _ = cast_izraz(node.children[2])
         if not (is_castable(type_m, Type.int) and is_castable(type_c, Type.int)):
@@ -430,6 +436,7 @@ def aditivni_izraz(node: Node):
         type_, _ = multiplikativni_izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+        # TODO: provjeriti treba li se nekako pohraniti vrijednost na stog ili u globalnu var!!!
         if right == '<aditivni_izraz> PLUS <multiplikativni_izraz>':
             if data_table.function is not None:
                 frisc_function_definitions[
@@ -455,6 +462,7 @@ def odnosni_izraz(node: Node):
           or right == '<odnosni_izraz> OP_GT <aditivni_izraz>'
           or right == '<odnosni_izraz> OP_LTE <aditivni_izraz>'
           or right == '<odnosni_izraz> OP_GTE <aditivni_izraz>'):
+        # TODO: napisati operatore
         type_, _ = odnosni_izraz(node.children[0])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
@@ -638,6 +646,8 @@ def slozena_naredba(node: Node, function=None, params_types=None, params_names=N
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     global data_table
+    global label_after_if
+    global is_if_from_else
     old_function = data_table.function
     new_node = TableNode(parent=data_table)
     data_table.children.append(new_node)
@@ -662,6 +672,10 @@ def slozena_naredba(node: Node, function=None, params_types=None, params_names=N
         lista_deklaracija(node.children[1])
         lista_naredbi(node.children[2])
         data_table = data_table.parent
+
+    if is_if_from_else:
+        frisc_function_definitions[data_table.function[0]] += f'JP {label_after_if}'
+        is_if_from_else = False
 
     else:
         pass
@@ -718,6 +732,7 @@ def izraz_naredba(node: Node):
 
 
 def naredba_grananja(node: Node):
+    global label_after_if
     name = '<naredba_grananja>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -725,13 +740,28 @@ def naredba_grananja(node: Node):
         type_, _ = izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+
+        frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n' \
+                                                              f'\t\tCMP R0, 0\n' \
+                                                              f'\t\tJP_EQ {label_after_if}\n'
         naredba(node.children[4])
+        frisc_function_definitions[data_table.function[0]] += f'{label_after_if}'
+        label_after_if = label_after_if + '1'
 
     elif right == 'KR_IF L_ZAGRADA <izraz> D_ZAGRADA <naredba> KR_ELSE <naredba>':
         type_, _ = izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+
+        frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n' \
+                                                              f'\t\tCMP R0, 0\n' \
+                                                              f'\t\tJP_EQ {label_after_if}\n'
+        is_if_from_else = True
+        old_label = label_after_if
+        label_after_if = label_after_if + '1'
         naredba(node.children[4])
+        frisc_function_definitions[data_table.function[0]] += f'{old_label}'
+        label_after_if = label_after_if + '1'
         naredba(node.children[6])
 
     else:
@@ -739,6 +769,8 @@ def naredba_grananja(node: Node):
 
 
 def naredba_petlje(node: Node):
+    global while_label
+    global label_after_while
     name = '<naredba_petlje>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -746,7 +778,19 @@ def naredba_petlje(node: Node):
         type_, _ = izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+
+        frisc_function_definitions[data_table.function[0]] += f'{while_label}'
+        frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n' \
+                                                              f'\t\tCMP R0, 0\n' \
+                                                              f'\t\tJP_EQ {label_after_while}\n'
+        a_w_l = label_after_while
+        label_after_while = label_after_while + '1'
+        w_l = while_label
+        while_label = while_label + '1'
         naredba(node.children[4])
+        frisc_function_definitions[data_table.function[0]] += f'\t\tJP {w_l}\n'
+        frisc_function_definitions[data_table.function[0]] += f'{a_w_l}'
+
 
     elif right == 'KR_FOR L_ZAGRADA <izraz_naredba> <izraz_naredba> D_ZAGRADA <naredba>':
         izraz_naredba(node.children[2])
@@ -976,7 +1020,7 @@ def init_deklarator(node: Node, inh_property):
     if right == '<izravni_deklarator>':
         type_, _ = izravni_deklarator(node.children[0], inh_property)
         if type(
-                type_) is not tuple and 'const' in type_.value:  # TODO treba vidjeti sto s tupleom i na jos dosta mjesta
+                type_) is not tuple and 'const' in type_.value:
             terminate(name, node.children)
 
     elif right == '<izravni_deklarator> OP_PRIDRUZI <inicijalizator>':
