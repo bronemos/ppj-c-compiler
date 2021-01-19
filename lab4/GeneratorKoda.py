@@ -4,7 +4,7 @@ import sys
 import re
 from collections import defaultdict
 
-from lab4.DataTypes import *
+from DataTypes import *
 
 string_re = re.compile(r'^\".*\"')
 char_array_re = re.compile(r'^{\s(\'.*\'(\s|,\s))*}$')
