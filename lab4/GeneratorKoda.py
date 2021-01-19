@@ -138,12 +138,12 @@ def primarni_izraz(node: Node):
 
         # if i while obrada funkcije
         if (x := global_data_table.definitions.get(child.data[2])) is not None:
-            mul = 0 if x[0] == Type.void else len(x)
+            mul = 0 if x[0] == Type.void else len(x[0])
             global_call = f'\t\tCALL F_{child.data[2]}\n' + f'\t\tPOP R0\n' * mul + f'\t\tPUSH R6\n'
             is_fun = True
         while help_table is not None and not is_fun:
             if data_table.declarations.get(child.data[2]) is not None:
-                mul = 0 if x[0] == Type.void else len(x)
+                mul = 0 if x[0] == Type.void else len(x[0])
                 global_call = f'\t\tCALL F_{child.data[2]}\n' + f'\t\tPOP R0\n' * mul + f'\t\tPUSH R6\n'
                 is_fun = True
                 break
@@ -158,20 +158,33 @@ def primarni_izraz(node: Node):
                 while help_table.parent is not None:
                     if child.data[2] in help_table.function_params:
                         pos = (len(help_table.function_params) - help_table.function_params.index(
-                            child.data[2]) + 2) * 4
+                            child.data[2]) + 1) * 4
+                        break
                     elif child.data[2] in help_table.vars:
+                        help_table_inner = help_table
+                        fun = help_table.function[0]
+                        fun_cmp = None
+                        num_vars_on_stack = 0
+                        while help_table_inner is not None:
+                            if help_table_inner.parent.function is None or help_table_inner.parent.function[0] != help_table_inner.function[0]:
+                                break
+                            else:
+                                num_vars_on_stack += len(help_table_inner.vars.keys())
+                            help_table_inner = help_table_inner.parent
                         pos = ((list(help_table.vars.keys()).index(child.data[2])) - len(
-                            help_table.function_params) + 1) * -4
-                    help_table = help_table.parent
-
-                help_table = data_table
-                while help_table is not None:
-                    if help_table.function is not None:
+                            help_table.function_params) + num_vars_on_stack + 1) * -4
                         break
                     help_table = help_table.parent
+
+                # mislim da ne treba jer blokovi unutar funkcije imaju zapisano kojoj fju pripadaju
+                # help_table = data_table
+                # while help_table is not None:
+                #     if help_table.function is not None:
+                #         break
+                #     help_table = help_table.parent
                 if pos is not None:
                     pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
-                    frisc_function_definitions[help_table.function[0]] += f'\t\tLOAD R0, (R5{pos})\n' \
+                    frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, (R5{pos})\n' \
                                                                           f'\t\tPUSH R0\n'
 
             if pos is None:
@@ -783,7 +796,7 @@ def naredba_skoka(node: Node):
             frisc_function_definitions[data_table.function[0]] += \
                 f'\t\tPOP R6\n' \
                 f'\t\tMOVE R5, R7\n' \
-                f'\t\tLOAD R5, (R7-4)\n' \
+                f'\t\tPOP R5\n' \
                 f'\t\tRET\n'
         return
 
@@ -1137,3 +1150,7 @@ for key, value in frisc_function_definitions.items():
 for key, value in frisc_global_variables.items():
     a.write(f'{key} {value}')
 a.close()
+
+# for i in range(2):
+#     print(global_data_table.vars)
+#     global_data_table = global_data_table.children[0]
