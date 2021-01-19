@@ -155,8 +155,10 @@ def primarni_izraz(node: Node):
                 if child.data[2] in data_table.function_params:
                     pos = (len(data_table.function_params) - data_table.function_params.index(child.data[2]) + 1) * 4
                 else:
-                    pos = ((list(data_table.vars.keys()).index(child.data[2])) - len(data_table.function_params)) * 4
-                frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, (R5+{pos})\n' \
+                    pos = ((list(data_table.vars.keys()).index(child.data[2])) - len(
+                        data_table.function_params) + 1) * -4
+                pos = f'+{pos}' if pos > 0 else pos
+                frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, (R5{pos})\n' \
                                                                       f'\t\tPUSH R0\n'
 
             else:
@@ -756,7 +758,7 @@ def naredba_skoka(node: Node):
         if data_table.function is not None:
             frisc_function_definitions[data_table.function[0]] += \
                 f'\t\tPOP R6\n' \
-                f'\t\tMOVE R5, R7\n'\
+                f'\t\tMOVE R5, R7\n' \
                 f'\t\tRET\n'
         return
 
