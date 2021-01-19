@@ -756,6 +756,7 @@ def naredba_skoka(node: Node):
         if data_table.function is not None:
             frisc_function_definitions[data_table.function[0]] += \
                 f'\t\tPOP R6\n' \
+                f'\t\tMOVE R5, R7\n'\
                 f'\t\tRET\n'
         return
 
