@@ -970,9 +970,9 @@ def izravni_deklarator(node: Node, inh_property):
         if not (data_table.vars.get(node.children[0].data[2]) is None and
                 data_table.declarations.get(node.children[0].data[2]) is None):
             terminate(name, node.children)
-        global_name = f'G_{node.children[0].data[2]}'
+        data_table.vars[node.children[0].data[2]] = inh_property
         if data_table.parent is None:
-            data_table.vars[node.children[0].data[2]] = inh_property
+            global_name = f'G_{node.children[0].data[2]}'
         return inh_property, None
 
     elif right == 'IDN L_UGL_ZAGRADA BROJ D_UGL_ZAGRADA':
