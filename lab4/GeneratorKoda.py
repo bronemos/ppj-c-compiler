@@ -27,7 +27,8 @@ global_is_OP_PRIDRUZI = False
 global_store_string = None
 cmp_label = 'CMP_LABEL'
 after_cmp = 'AFTER_CMP'
-
+after_or = 'AFTER_OR'
+after_and = 'AFTER_AND'
 
 class Node:
 
@@ -674,6 +675,7 @@ def bin_ili_izraz(node: Node):
 
 
 def log_i_izraz(node: Node):
+    global after_and
     name = '<log_i_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -682,11 +684,26 @@ def log_i_izraz(node: Node):
 
     elif right == '<log_i_izraz> OP_I <bin_ili_izraz>':
         type_, _ = log_i_izraz(node.children[0])
+        old_after_and = after_and
+        after_and += '1'
+        if data_table.function is not None:
+            frisc_function_definitions[
+                data_table.function[0]] += f'\t\tPOP R0\n' \
+                                           f'\t\tPUSH R0\n' \
+                                           f'\t\tCMP R0, 0\n' \
+                                           f'\t\tJP_EQ {old_after_and}\n'
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
         type_, _ = bin_ili_izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+        if data_table.function is not None:
+            frisc_function_definitions[
+                data_table.function[0]] += f'\t\tPOP R1\n' \
+                                           f'\t\tPOP R0\n' \
+                                           f'\t\tAND R0, R1, R0\n' \
+                                           f'\t\tPUSH R0\n' \
+                                           f'{old_after_and}\n'
         return Type.int, False
 
     else:
@@ -694,6 +711,7 @@ def log_i_izraz(node: Node):
 
 
 def log_ili_izraz(node: Node):
+    global after_or
     name = '<log_ili_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -702,11 +720,27 @@ def log_ili_izraz(node: Node):
 
     elif right == '<log_ili_izraz> OP_ILI <log_i_izraz>':
         type_, _ = log_ili_izraz(node.children[0])
+        old_after_or = after_or
+        after_or += '1'
+        if data_table.function is not None:
+            frisc_function_definitions[
+                data_table.function[0]] += f'\t\tPOP R0\n' \
+                                           f'\t\tPUSH R0\n' \
+                                           f'\t\tCMP R0, 0\n' \
+                                           f'\t\tJP_NE {old_after_or}\n'
+
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
         type_, _ = log_i_izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+        if data_table.function is not None:
+            frisc_function_definitions[
+                data_table.function[0]] += f'\t\tPOP R1\n' \
+                                           f'\t\tPOP R0\n' \
+                                           f'\t\tOR R0, R1, R0\n' \
+                                           f'\t\tPUSH R0\n' \
+                                           f'{old_after_or}\n'
         return Type.int, False
 
     else:
