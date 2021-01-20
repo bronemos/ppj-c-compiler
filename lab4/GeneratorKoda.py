@@ -23,6 +23,8 @@ label_after_if = 'HELPER_LABEL'
 is_if_from_else = False
 while_label = 'WHILE_LABEL'
 label_after_while = 'AFTER_WHILE'
+global_is_OP_PRIDRUZI = False
+global_store_string = None
 
 
 class Node:
@@ -127,11 +129,13 @@ def primarni_izraz(node: Node):
     global global_minus
     global helper_identifier
     global global_call
+    global global_store_string
 
     name = '<primarni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == 'IDN':
+        # ako je global_is_OP_PRIDRUZI true dodaje samo adresu gdje se treba spremiti, inace push i pop
         child = node.children[0]
         if (data := data_table.search(child.data[2])) is None:
             terminate(name, node.children)
@@ -187,14 +191,23 @@ def primarni_izraz(node: Node):
                 #         break
                 #     help_table = help_table.parent
                 if pos is not None:
-                    pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
-                    frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, (R5{pos})\n' \
-                                                                          f'\t\tPUSH R0\n'
+                    if global_is_OP_PRIDRUZI:
+                        pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
+                        global_store_string = f'\t\tPOP R0\n' \
+                                               f'\t\tSTORE R0, (R5{pos})\n'
+                    else:
+                        pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
+                        frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, (R5{pos})\n' \
+                                                                              f'\t\tPUSH R0\n'
 
             if pos is None:
-                frisc_function_definitions[data_table.function[0]] += \
-                    f'\t\tLOAD R0, (G_{child.data[2]})\n' \
-                    f'\t\tPUSH R0\n'
+                if global_is_OP_PRIDRUZI:
+                    global_store_string = f'\t\tPOP R0\n' \
+                                          f'\t\tSTORE R0, (G_{child.data[2]})\n'
+                else:
+                    frisc_function_definitions[data_table.function[0]] += \
+                        f'\t\tLOAD R0, (G_{child.data[2]})\n' \
+                        f'\t\tPUSH R0\n'
         return data, is_l_expression(data)
 
     elif right == 'BROJ':
@@ -611,6 +624,8 @@ def log_ili_izraz(node: Node):
 
 
 def izraz_pridruzivanja(node: Node):
+    global global_store_string
+    global global_is_OP_PRIDRUZI
     name = '<izraz_pridruzivanja>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -618,12 +633,18 @@ def izraz_pridruzivanja(node: Node):
         return log_ili_izraz(node.children[0])
 
     elif right == '<postfiks_izraz> OP_PRIDRUZI <izraz_pridruzivanja>':
+        global global_is_OP_PRIDRUZI
+        global_is_OP_PRIDRUZI = True
         type_post, l_expression = postfiks_izraz(node.children[0])
         if not l_expression:
             terminate(name, node.children)
         type_prid, _ = izraz_pridruzivanja(node.children[2])
         if not is_castable(type_prid, type_post):
             terminate(name, node.children)
+        if global_store_string is not None:
+            frisc_function_definitions[data_table.function[0]] += global_store_string
+        global_store_string = None
+        global_is_OP_PRIDRUZI = False
         return type_post, False
 
 
@@ -759,10 +780,13 @@ def naredba_grananja(node: Node):
         is_if_from_else = True
         old_label = label_after_if
         label_after_if = label_after_if + '1'
-        naredba(node.children[4])
-        frisc_function_definitions[data_table.function[0]] += f'{old_label}'
+        after_else_local = label_after_if
         label_after_if = label_after_if + '1'
+        naredba(node.children[4])
+        frisc_function_definitions[data_table.function[0]] += f'\t\tJP {after_else_local}\n'
+        frisc_function_definitions[data_table.function[0]] += f'{old_label}'
         naredba(node.children[6])
+        frisc_function_definitions[data_table.function[0]] += f'{after_else_local}'
 
     else:
         pass
@@ -1188,8 +1212,10 @@ for function_name, declaration_list in all_declarations.items():
             print('funkcija')
             exit(0)
 
+a.write('\n')
 for key, value in frisc_function_definitions.items():
     a.write(f'F_{key} {value}')
+    a.write('\n')
 
 for key, value in frisc_global_variables.items():
     a.write(f'{key} {value}')
