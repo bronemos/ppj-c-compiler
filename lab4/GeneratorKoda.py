@@ -29,6 +29,10 @@ cmp_label = 'CMP_LABEL'
 after_cmp = 'AFTER_CMP'
 after_or = 'AFTER_OR'
 after_and = 'AFTER_AND'
+loop_label = 'LOOP_LABEL'
+loop_end_label = 'LOOP_END_LABEL'
+zero_mul = 'ZERO_MUL'
+
 
 class Node:
 
@@ -438,6 +442,10 @@ def specifikator_tipa(node: Node):
 
 
 def multiplikativni_izraz(node: Node):
+    global loop_label
+    global loop_end_label
+    global zero_mul
+
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     name = '<multiplikativni_izraz>'
 
@@ -452,6 +460,42 @@ def multiplikativni_izraz(node: Node):
         type_c, _ = cast_izraz(node.children[2])
         if not (is_castable(type_m, Type.int) and is_castable(type_c, Type.int)):
             terminate(name, node.children)
+
+        if right == '<multiplikativni_izraz> OP_PUTA <cast_izraz>':
+            frisc_function_definitions[data_table.function[0]] += '\t\tPOP R0\n' \
+                                                                  '\t\tCMP R0, 0\n' \
+                                                                  f'\t\tJP_EQ {zero_mul}\n' \
+                                                                  '\t\tPOP R1\n' \
+                                                                  '\t\tCMP R0, 0\n' \
+                                                                  f'\t\tJP_EQ {zero_mul}\n' \
+                                                                  f'{loop_label} SUB R1, 1, R1\n' \
+                                                                  f'\t\tJP_Z {loop_end_label}\n' \
+                                                                  f'\t\tADD R0, R0, R0\n' \
+                                                                  f'\t\tJP {loop_label}\n' \
+                                                                  f'{zero_mul} MOVE 0, R0\n' \
+                                                                  f'{loop_end_label}\n' \
+                                                                  f'\t\tPUSH R0\n'
+
+            loop_label += '1'
+            zero_mul += '1'
+            loop_end_label += '1'
+
+        elif right == '<multiplikativni_izraz> OP_DIJELI <cast_izraz>':
+            pass
+
+        else:
+            frisc_function_definitions[data_table.function[0]] += '\t\tPOP R0\n' \
+                                                                  '\t\tPOP R1\n' \
+                                                                  f'{loop_label} SUB R1, R0, R1\n' \
+                                                                  f'\t\tJP_N {loop_end_label}\n' \
+                                                                  f'\t\tJP {loop_label}\n' \
+                                                                  f'{loop_end_label}\n' \
+                                                                  f'\t\tADD R1, R0, R0\n' \
+                                                                  f'\t\tPUSH R0\n'
+
+            loop_label += '1'
+            loop_end_label += '1'
+
         return Type.int, False
 
     else:
