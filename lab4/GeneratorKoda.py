@@ -531,7 +531,7 @@ def odnosni_izraz(node: Node):
                                                                   f'\t\tJP_SGE {cmp_label}\n' \
                                                                   '\t\tMOVE 0, R0\n' \
                                                                   '\t\tPUSH R0\n' \
-                                                                  f'JP {after_cmp}\n' \
+                                                                  f'\t\tJP {after_cmp}\n' \
                                                                   f'{cmp_label} MOVE 1, R0\n' \
                                                                   '\t\tPUSH R0\n' \
                                                                   f'{after_cmp}\n'
