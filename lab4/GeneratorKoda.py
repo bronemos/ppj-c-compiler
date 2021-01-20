@@ -25,6 +25,8 @@ while_label = 'WHILE_LABEL'
 label_after_while = 'AFTER_WHILE'
 global_is_OP_PRIDRUZI = False
 global_store_string = None
+cmp_label = 'CMP_LABEL'
+after_cmp = 'AFTER_CMP'
 
 
 class Node:
@@ -465,6 +467,9 @@ def aditivni_izraz(node: Node):
 
 
 def odnosni_izraz(node: Node):
+    global cmp_label
+    global after_cmp
+
     name = '<odnosni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -475,13 +480,65 @@ def odnosni_izraz(node: Node):
           or right == '<odnosni_izraz> OP_GT <aditivni_izraz>'
           or right == '<odnosni_izraz> OP_LTE <aditivni_izraz>'
           or right == '<odnosni_izraz> OP_GTE <aditivni_izraz>'):
-        # TODO: napisati operatore
+        # TODO operatori
+
         type_, _ = odnosni_izraz(node.children[0])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
         type_, _ = aditivni_izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+
+        if right == '<odnosni_izraz> OP_LT <aditivni_izraz>':
+            frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
+                                                                  '\t\tPOP R0\n' \
+                                                                  '\t\tCMP R1, R0\n' \
+                                                                  f'\t\tJP_SLT {cmp_label}\n' \
+                                                                  '\t\tMOVE 0, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'JP {after_cmp}' \
+                                                                  f'{cmp_label} MOVE 1, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'{after_cmp}\n'
+        elif right == '<odnosni_izraz> OP_GT <aditivni_izraz>':
+            frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
+                                                                  '\t\tPOP R0\n' \
+                                                                  '\t\tCMP R1, R0\n' \
+                                                                  f'\t\tJP_SGT {cmp_label}\n' \
+                                                                  '\t\tMOVE 0, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'JP {after_cmp}' \
+                                                                  f'{cmp_label} MOVE 1, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'{after_cmp}\n'
+
+        elif right == '<odnosni_izraz> OP_LTE <aditivni_izraz>':
+            frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
+                                                                  '\t\tPOP R0\n' \
+                                                                  '\t\tCMP R1, R0\n' \
+                                                                  f'\t\tJP_SLE {cmp_label}\n' \
+                                                                  '\t\tMOVE 0, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'JP {after_cmp}' \
+                                                                  f'{cmp_label} MOVE 1, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'{after_cmp}\n'
+
+        else:
+            frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
+                                                                  '\t\tPOP R0\n' \
+                                                                  '\t\tCMP R1, R0\n' \
+                                                                  f'\t\tJP_SGE {cmp_label}\n' \
+                                                                  '\t\tMOVE 0, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'JP {after_cmp}' \
+                                                                  f'{cmp_label} MOVE 1, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'{after_cmp}\n'
+
+        cmp_label += '1'
+        after_cmp += '1'
+
         return Type.int, False
 
     else:
@@ -489,20 +546,51 @@ def odnosni_izraz(node: Node):
 
 
 def jednakosni_izraz(node: Node):
+    global cmp_label
+    global after_cmp
     name = '<jednakosni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == '<odnosni_izraz>':
         return odnosni_izraz(node.children[0])
 
+    # TODO EQ
     elif (right == '<jednakosni_izraz> OP_EQ <odnosni_izraz>'
           or right == '<jednakosni_izraz> OP_NEQ <odnosni_izraz>'):
+
         type_, _ = jednakosni_izraz(node.children[0])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
         type_, _ = odnosni_izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+
+        if right == '<jednakosni_izraz> OP_EQ <odnosni_izraz>':
+            frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
+                                                                  '\t\tPOP R0\n' \
+                                                                  '\t\tCMP R0, R1\n' \
+                                                                  f'\t\tJP_EQ {cmp_label}\n' \
+                                                                  '\t\tMOVE 0, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'\t\tJP {after_cmp}\n' \
+                                                                  f'{cmp_label} MOVE 1, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'{after_cmp}\n'
+
+        else:
+            frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
+                                                                  '\t\tPOP R0\n' \
+                                                                  '\t\tCMP R0, R1\n' \
+                                                                  f'\t\tJP_EQ {cmp_label}\n' \
+                                                                  '\t\tMOVE 1, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'\t\tJP {after_cmp}\n' \
+                                                                  f'{cmp_label} MOVE 0, R0\n' \
+                                                                  '\t\tPUSH R0\n' \
+                                                                  f'{after_cmp}\n'
+        cmp_label += '1'
+        after_cmp += '1'
+
         return Type.int, False
 
     else:
