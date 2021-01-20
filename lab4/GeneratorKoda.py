@@ -29,6 +29,8 @@ cmp_label = 'CMP_LABEL'
 after_cmp = 'AFTER_CMP'
 after_or = 'AFTER_OR'
 after_and = 'AFTER_AND'
+is_op_inc = False
+adress_op_inc = None
 
 class Node:
 
@@ -134,6 +136,8 @@ def primarni_izraz(node: Node):
     global global_call
     global global_store_string
     global global_is_OP_PRIDRUZI
+    global is_op_inc
+    global adress_op_inc
 
     name = '<primarni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
@@ -200,6 +204,11 @@ def primarni_izraz(node: Node):
                         pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
                         global_store_string = f'\t\tPOP R0\n' \
                                               f'\t\tSTORE R0, (R5{pos})\n'
+                    elif is_op_inc:
+                        is_op_inc = False
+                        frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, (R5{pos})\n' \
+                                                                              f'\t\tPUSH R0\n'
+                        adress_op_inc = f'R5{pos}'
                     else:
                         pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
                         frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, (R5{pos})\n' \
@@ -209,6 +218,12 @@ def primarni_izraz(node: Node):
                 if global_is_OP_PRIDRUZI:
                     global_store_string = f'\t\tPOP R0\n' \
                                           f'\t\tSTORE R0, (G_{child.data[2]})\n'
+                elif is_op_inc:
+                    is_op_inc = False
+                    frisc_function_definitions[data_table.function[0]] += \
+                        f'\t\tLOAD R0, (G_{child.data[2]})\n' \
+                        f'\t\tPUSH R0\n'
+                    adress_op_inc = f'G_{child.data[2]}'
                 else:
                     frisc_function_definitions[data_table.function[0]] += \
                         f'\t\tLOAD R0, (G_{child.data[2]})\n' \
@@ -270,6 +285,8 @@ def primarni_izraz(node: Node):
 
 def postfiks_izraz(node: Node):
     global global_call
+    global adress_op_inc
+    global is_op_inc
 
     name = '<postfiks_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
@@ -311,19 +328,22 @@ def postfiks_izraz(node: Node):
         return function_type[1], False
 
     elif right == '<postfiks_izraz> OP_INC' or right == '<postfiks_izraz> OP_DEC':
-        # TODO: OP_INC
+        is_op_inc = True
         type_, l_expression = postfiks_izraz(node.children[0])
         if not (is_castable(type_, Type.int) and l_expression):
             terminate(name, node.children)
 
         if right == right == '<postfiks_izraz> OP_INC':
             frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n' \
-                                                                  f'\t\tADD R0, 1, R0\n' \
+                                                                  f'\t\tADD R0, 1, R3\n' \
                                                                   f'\t\tPUSH R0\n'
         else:
             frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n' \
-                                                                  f'\t\tSUB R0, 1, R0\n' \
+                                                                  f'\t\tSUB R0, 1, R3\n' \
                                                                   f'\t\tPUSH R0\n'
+        if adress_op_inc is not None:
+            frisc_function_definitions[data_table.function[0]] += f'\t\tSTORE R3, ({adress_op_inc})\n'
+            adress_op_inc = None
         return Type.int, False
 
     else:
@@ -345,6 +365,8 @@ def lista_argumenata(node: Node):
 
 
 def unarni_izraz(node: Node):
+    global adress_op_inc
+    global is_op_inc
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
     name = '<unarni_izraz>'
 
@@ -352,7 +374,7 @@ def unarni_izraz(node: Node):
         return postfiks_izraz(node.children[0])
 
     elif right == 'OP_INC <unarni_izraz>' or right == 'OP_DEC <unarni_izraz>':
-        # TODO: OP_INC
+        is_op_inc = True
         type_, l_expression = unarni_izraz(node.children[1])
         if not (l_expression and is_castable(type_, Type.int)):
             terminate(name, node.children)
@@ -364,7 +386,9 @@ def unarni_izraz(node: Node):
             frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n' \
                                                                   f'\t\tSUB R0, 1, R0\n' \
                                                                   f'\t\tPUSH R0\n'
-
+        if adress_op_inc is not None:
+            frisc_function_definitions[data_table.function[0]] += f'\t\tSTORE R0, ({adress_op_inc})\n'
+            adress_op_inc = None
         return Type.int, False
 
     elif right == '<unarni_operator> <cast_izraz>':
