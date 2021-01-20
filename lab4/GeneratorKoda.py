@@ -132,6 +132,7 @@ def primarni_izraz(node: Node):
     global helper_identifier
     global global_call
     global global_store_string
+    global global_is_OP_PRIDRUZI
 
     name = '<primarni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
@@ -196,7 +197,7 @@ def primarni_izraz(node: Node):
                     if global_is_OP_PRIDRUZI:
                         pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
                         global_store_string = f'\t\tPOP R0\n' \
-                                               f'\t\tSTORE R0, (R5{pos})\n'
+                                              f'\t\tSTORE R0, (R5{pos})\n'
                     else:
                         pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
                         frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, (R5{pos})\n' \
@@ -210,6 +211,7 @@ def primarni_izraz(node: Node):
                     frisc_function_definitions[data_table.function[0]] += \
                         f'\t\tLOAD R0, (G_{child.data[2]})\n' \
                         f'\t\tPUSH R0\n'
+        global_is_OP_PRIDRUZI = False
         return data, is_l_expression(data)
 
     elif right == 'BROJ':
@@ -887,11 +889,11 @@ def naredba_petlje(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == 'KR_WHILE L_ZAGRADA <izraz> D_ZAGRADA <naredba>':
+        frisc_function_definitions[data_table.function[0]] += f'{while_label}\n'
         type_, _ = izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
 
-        frisc_function_definitions[data_table.function[0]] += f'{while_label}'
         frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n' \
                                                               f'\t\tCMP R0, 0\n' \
                                                               f'\t\tJP_EQ {label_after_while}\n'
