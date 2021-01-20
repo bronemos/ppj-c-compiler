@@ -492,7 +492,7 @@ def odnosni_izraz(node: Node):
         if right == '<odnosni_izraz> OP_LT <aditivni_izraz>':
             frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
                                                                   '\t\tPOP R0\n' \
-                                                                  '\t\tCMP R1, R0\n' \
+                                                                  '\t\tCMP R0, R1\n' \
                                                                   f'\t\tJP_SLT {cmp_label}\n' \
                                                                   '\t\tMOVE 0, R0\n' \
                                                                   '\t\tPUSH R0\n' \
@@ -503,7 +503,7 @@ def odnosni_izraz(node: Node):
         elif right == '<odnosni_izraz> OP_GT <aditivni_izraz>':
             frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
                                                                   '\t\tPOP R0\n' \
-                                                                  '\t\tCMP R1, R0\n' \
+                                                                  '\t\tCMP R0, R1\n' \
                                                                   f'\t\tJP_SGT {cmp_label}\n' \
                                                                   '\t\tMOVE 0, R0\n' \
                                                                   '\t\tPUSH R0\n' \
@@ -515,7 +515,7 @@ def odnosni_izraz(node: Node):
         elif right == '<odnosni_izraz> OP_LTE <aditivni_izraz>':
             frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
                                                                   '\t\tPOP R0\n' \
-                                                                  '\t\tCMP R1, R0\n' \
+                                                                  '\t\tCMP R0, R1\n' \
                                                                   f'\t\tJP_SLE {cmp_label}\n' \
                                                                   '\t\tMOVE 0, R0\n' \
                                                                   '\t\tPUSH R0\n' \
@@ -527,7 +527,7 @@ def odnosni_izraz(node: Node):
         else:
             frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
                                                                   '\t\tPOP R0\n' \
-                                                                  '\t\tCMP R1, R0\n' \
+                                                                  '\t\tCMP R0, R1\n' \
                                                                   f'\t\tJP_SGE {cmp_label}\n' \
                                                                   '\t\tMOVE 0, R0\n' \
                                                                   '\t\tPUSH R0\n' \
