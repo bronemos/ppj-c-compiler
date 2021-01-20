@@ -32,9 +32,11 @@ after_and = 'AFTER_AND'
 loop_label = 'LOOP_LABEL'
 loop_end_label = 'LOOP_END_LABEL'
 zero_mul = 'ZERO_MUL'
+for_label = 'FOR_LABEL'
 
 is_op_inc = False
 adress_op_inc = None
+
 
 class Node:
 
@@ -479,7 +481,6 @@ def multiplikativni_izraz(node: Node):
     elif (right == '<multiplikativni_izraz> OP_PUTA <cast_izraz>'
           or right == '<multiplikativni_izraz> OP_DIJELI <cast_izraz>'
           or right == '<multiplikativni_izraz> OP_MOD <cast_izraz>'):
-        # TODO: napraviti operatore zbrajanjem i oduzimanjem u petlji
         type_m, _ = multiplikativni_izraz(node.children[0])
         type_c, _ = cast_izraz(node.children[2])
         if not (is_castable(type_m, Type.int) and is_castable(type_c, Type.int)):
@@ -504,6 +505,7 @@ def multiplikativni_izraz(node: Node):
             zero_mul += '1'
             loop_end_label += '1'
 
+        # TODO dovrsiti dijeli
         elif right == '<multiplikativni_izraz> OP_DIJELI <cast_izraz>':
             pass
 
@@ -1004,6 +1006,8 @@ def naredba_grananja(node: Node):
 def naredba_petlje(node: Node):
     global while_label
     global label_after_while
+    global for_label
+
     name = '<naredba_petlje>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -1034,11 +1038,25 @@ def naredba_petlje(node: Node):
 
     elif right == 'KR_FOR L_ZAGRADA <izraz_naredba> <izraz_naredba> <izraz> D_ZAGRADA <naredba>':
         izraz_naredba(node.children[2])
+
+        frisc_function_definitions[data_table.function[0]] += f'{for_label}\n'
+
         type_ = izraz_naredba(node.children[3])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
+
+        frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R4\n'
+
         izraz(node.children[4])
+
+        #frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n'
+
         naredba(node.children[6])
+
+        frisc_function_definitions[data_table.function[0]] += f'\t\tCMP R4, 0\n' \
+                                                              f'\t\tJP_NE {for_label}\n'
+
+        for_label += '1'
 
     else:
         pass
