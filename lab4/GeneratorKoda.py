@@ -177,7 +177,8 @@ def primarni_izraz(node: Node):
                         fun_cmp = None
                         num_vars_on_stack = 0
                         while help_table_inner is not None:
-                            if help_table_inner.parent.function is None or help_table_inner.parent.function[0] != help_table_inner.function[0]:
+                            if help_table_inner.parent.function is None or help_table_inner.parent.function[0] != \
+                                    help_table_inner.function[0]:
                                 break
                             else:
                                 num_vars_on_stack += len(help_table_inner.vars.keys())
@@ -313,6 +314,15 @@ def postfiks_izraz(node: Node):
         type_, l_expression = postfiks_izraz(node.children[0])
         if not (is_castable(type_, Type.int) and l_expression):
             terminate(name, node.children)
+
+        if right == right == '<postfiks_izraz> OP_INC':
+            frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n' \
+                                                                  f'\t\tADD R0, 1, R0\n' \
+                                                                  f'\t\tPUSH R0\n'
+        else:
+            frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n' \
+                                                                  f'\t\tSUB R0, 1, R0\n' \
+                                                                  f'\t\tPUSH R0\n'
         return Type.int, False
 
     else:
@@ -345,6 +355,15 @@ def unarni_izraz(node: Node):
         type_, l_expression = unarni_izraz(node.children[1])
         if not (l_expression and is_castable(type_, Type.int)):
             terminate(name, node.children)
+        if right == right == 'OP_INC <unarni_izraz>':
+            frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n' \
+                                                                  f'\t\tADD R0, 1, R0\n' \
+                                                                  f'\t\tPUSH R0\n'
+        else:
+            frisc_function_definitions[data_table.function[0]] += f'\t\tPOP R0\n' \
+                                                                  f'\t\tSUB R0, 1, R0\n' \
+                                                                  f'\t\tPUSH R0\n'
+
         return Type.int, False
 
     elif right == '<unarni_operator> <cast_izraz>':
@@ -482,7 +501,6 @@ def odnosni_izraz(node: Node):
           or right == '<odnosni_izraz> OP_GT <aditivni_izraz>'
           or right == '<odnosni_izraz> OP_LTE <aditivni_izraz>'
           or right == '<odnosni_izraz> OP_GTE <aditivni_izraz>'):
-        # TODO operatori
 
         type_, _ = odnosni_izraz(node.children[0])
         if not is_castable(type_, Type.int):
@@ -556,7 +574,6 @@ def jednakosni_izraz(node: Node):
     if right == '<odnosni_izraz>':
         return odnosni_izraz(node.children[0])
 
-    # TODO EQ
     elif (right == '<jednakosni_izraz> OP_EQ <odnosni_izraz>'
           or right == '<jednakosni_izraz> OP_NEQ <odnosni_izraz>'):
 
