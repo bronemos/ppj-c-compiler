@@ -938,11 +938,39 @@ def slozena_naredba(node: Node, function=None, params_types=None, params_names=N
 
     if right == 'L_VIT_ZAGRADA <lista_naredbi> D_VIT_ZAGRADA':
         lista_naredbi(node.children[1])
+
+        if data_table.parent.function is None:
+            if data_table.function is not None:
+                if data_table.function[2] == Type.void:
+                    frisc_function_definitions[data_table.function[0]] += \
+                        f'\t\tMOVE R5, R7\n' \
+                        f'\t\tPOP R5\n' \
+                        f'\t\tRET\n'
+                else:
+                    frisc_function_definitions[data_table.function[0]] += \
+                        f'\t\tPOP R6\n' \
+                        f'\t\tMOVE R5, R7\n' \
+                        f'\t\tPOP R5\n' \
+                        f'\t\tRET\n'
+
         data_table = data_table.parent
 
     elif right == 'L_VIT_ZAGRADA <lista_deklaracija> <lista_naredbi> D_VIT_ZAGRADA':
         lista_deklaracija(node.children[1])
         lista_naredbi(node.children[2])
+        if data_table.parent.function is None:
+            if data_table.function is not None:
+                if data_table.function[2] == Type.void:
+                    frisc_function_definitions[data_table.function[0]] += \
+                        f'\t\tMOVE R5, R7\n' \
+                        f'\t\tPOP R5\n' \
+                        f'\t\tRET\n'
+                else:
+                    frisc_function_definitions[data_table.function[0]] += \
+                        f'\t\tPOP R6\n' \
+                        f'\t\tMOVE R5, R7\n' \
+                        f'\t\tPOP R5\n' \
+                        f'\t\tRET\n'
         data_table = data_table.parent
 
     if is_if_from_else:
@@ -1119,7 +1147,6 @@ def naredba_skoka(node: Node):
         function = data_table.function
         if not (function is not None and function[2] == Type.void):
             terminate(name, node.children)
-
         if data_table.function is not None:
             frisc_function_definitions[data_table.function[0]] += \
                 f'\t\tMOVE R5, R7\n' \
@@ -1132,7 +1159,6 @@ def naredba_skoka(node: Node):
         function = data_table.function
         if not (function is not None and is_castable(type_, function[2])):
             terminate(name, node.children)
-
         if data_table.function is not None:
             frisc_function_definitions[data_table.function[0]] += \
                 f'\t\tPOP R6\n' \
