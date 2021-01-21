@@ -40,6 +40,7 @@ global_loading_array_adress = None
 global_loading_array = False
 global_array_adress = None
 global_array_adress_index = None
+global_array_adress_to_store = None
 
 is_op_inc = False
 adress_op_inc = None
@@ -213,6 +214,7 @@ def primarni_izraz(node: Node):
 
                 if pos is not None:
                     if global_is_OP_PRIDRUZI:
+                        global_is_OP_PRIDRUZI = False
                         pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
                         global_store_string = f'\t\tPOP R0\n' \
                                               f'\t\tSTORE R0, (R5{pos})\n'
@@ -227,9 +229,16 @@ def primarni_izraz(node: Node):
                                                                               f'\t\tPUSH R0\n'
             # gleda var globalnu
             if pos is None:
-                if global_loading_array:
+                if global_array_is_OP_PRIDRUZI:
+                    global_is_OP_PRIDRUZI = False
+                    global_array_is_OP_PRIDRUZI = False
+                    # global_store_string = f'\t\tPOP R0\n' \
+                    #                       f'\t\tSTORE R0, ({global_array_adress_to_store})\n'
+                    global_array_adress = f'G_{child.data[2]}'
+                elif global_loading_array:
                     global_array_adress = f'G_{child.data[2]}'
                 elif global_is_OP_PRIDRUZI:
+                    global_is_OP_PRIDRUZI = False
                     global_store_string = f'\t\tPOP R0\n' \
                                           f'\t\tSTORE R0, (G_{child.data[2]})\n'
                 elif is_op_inc:
@@ -242,17 +251,17 @@ def primarni_izraz(node: Node):
                     frisc_function_definitions[data_table.function[0]] += \
                         f'\t\tLOAD R0, (G_{child.data[2]})\n' \
                         f'\t\tPUSH R0\n'
-        global_is_OP_PRIDRUZI = False
+        # global_is_OP_PRIDRUZI = False
         return data, is_l_expression(data)
 
     elif right == 'BROJ':
         child = node.children[0]
         if not is_int(child.data[2]):
             terminate(name, node.children)
-        elif global_loading_array:
-                global_array_adress_index = child.data[2]
-                global_loading_array = False
-        if data_table.parent is not None:
+        if global_loading_array:
+            global_array_adress_index = child.data[2]
+            global_loading_array = False
+        elif data_table.parent is not None:
             if global_minus:
                 frisc_global_variables[helper_identifier] = f'DW %D -{number_decimal(child.data[2])}\n'
             else:
@@ -310,6 +319,9 @@ def postfiks_izraz(node: Node):
     global adress_op_inc
     global is_op_inc
     global global_loading_array
+    global global_array_adress_to_store
+    global global_array_is_OP_PRIDRUZI
+    global global_store_string
 
     name = '<postfiks_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
@@ -319,12 +331,18 @@ def postfiks_izraz(node: Node):
 
     elif right == '<postfiks_izraz> L_UGL_ZAGRADA <izraz> D_UGL_ZAGRADA':
         global_loading_array = True
+        inner_is_OP_PRIDRUZI = global_is_OP_PRIDRUZI
         type_postfix, _ = postfiks_izraz(node.children[0])
         if 'array' not in type_postfix.value:
             terminate(name, node.children)
         type_izraz, _ = izraz(node.children[2])
-        frisc_function_definitions[data_table.function[0]] = f'\t\tLOAD R0, ({global_array_adress}_{global_array_adress_index})\n' \
+        if not inner_is_OP_PRIDRUZI:
+            frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, ({global_array_adress}_{global_array_adress_index})\n' \
                                                              f'\t\tPUSH R0\n'
+        else:
+            global_array_adress_to_store = f'{global_array_adress}_{global_array_adress_index}'
+            global_store_string = f'\t\tPOP R0\n' \
+                                  f'\t\tSTORE R0, ({global_array_adress_to_store})\n'
 
         global_loading_array = False
         if not is_castable(type_izraz, Type.int):
