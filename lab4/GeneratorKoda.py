@@ -33,6 +33,13 @@ loop_label = 'LOOP_LABEL'
 loop_end_label = 'LOOP_END_LABEL'
 zero_mul = 'ZERO_MUL'
 for_label = 'FOR_LABEL'
+global_array_name = None
+global_array_is_OP_PRIDRUZI = False
+global_array_current_index = 0
+global_loading_array_adress = None
+global_loading_array = False
+global_array_adress = None
+global_array_adress_index = None
 
 is_op_inc = False
 adress_op_inc = None
@@ -144,6 +151,11 @@ def primarni_izraz(node: Node):
     global global_is_OP_PRIDRUZI
     global is_op_inc
     global adress_op_inc
+    global global_array_is_OP_PRIDRUZI
+    global global_array_current_index
+    global global_loading_array
+    global global_array_adress
+    global global_array_adress_index
 
     name = '<primarni_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
@@ -171,7 +183,7 @@ def primarni_izraz(node: Node):
                 break
             help_table = help_table.parent
 
-        # ako nije funkcija gleda varijablu
+        # ako nije funkcija gleda varijablu na stogu
         if not is_fun:
             pos = None
             if data_table.parent is not None:
@@ -199,12 +211,6 @@ def primarni_izraz(node: Node):
                         break
                     help_table = help_table.parent
 
-                # mislim da ne treba jer blokovi unutar funkcije imaju zapisano kojoj fju pripadaju
-                # help_table = data_table
-                # while help_table is not None:
-                #     if help_table.function is not None:
-                #         break
-                #     help_table = help_table.parent
                 if pos is not None:
                     if global_is_OP_PRIDRUZI:
                         pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
@@ -219,9 +225,11 @@ def primarni_izraz(node: Node):
                         pos = f'+%D {pos}' if pos > 0 else f'-%D {abs(pos)}'
                         frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, (R5{pos})\n' \
                                                                               f'\t\tPUSH R0\n'
-
+            # gleda var globalnu
             if pos is None:
-                if global_is_OP_PRIDRUZI:
+                if global_loading_array:
+                    global_array_adress = f'G_{child.data[2]}'
+                elif global_is_OP_PRIDRUZI:
                     global_store_string = f'\t\tPOP R0\n' \
                                           f'\t\tSTORE R0, (G_{child.data[2]})\n'
                 elif is_op_inc:
@@ -241,6 +249,9 @@ def primarni_izraz(node: Node):
         child = node.children[0]
         if not is_int(child.data[2]):
             terminate(name, node.children)
+        elif global_loading_array:
+                global_array_adress_index = child.data[2]
+                global_loading_array = False
         if data_table.parent is not None:
             if global_minus:
                 frisc_global_variables[helper_identifier] = f'DW %D -{number_decimal(child.data[2])}\n'
@@ -250,6 +261,7 @@ def primarni_izraz(node: Node):
                 f'\t\tLOAD R0, ({helper_identifier})\n' \
                 f'\t\tPUSH R0\n'
             helper_identifier += '1'
+
         elif global_name is not None:
             if global_minus:
                 frisc_global_variables[global_name] = f'DW %D -{number_decimal(child.data[2])}\n'
@@ -270,6 +282,10 @@ def primarni_izraz(node: Node):
                 f'\t\tLOAD R0, ({helper_identifier})\n' \
                 f'\t\tPUSH R0\n'
             helper_identifier += '1'
+        elif global_array_name is not None:
+            frisc_global_variables[f'{global_array_name}_{global_array_current_index}'] = \
+                f'DW %D {ord(child.data[2][1])}\n'
+            global_array_current_index += 1
         elif global_name is not None:
             frisc_global_variables[global_name] = f'DW %D {ord(child.data[2][1])}\n'
             global_name = None
@@ -293,6 +309,7 @@ def postfiks_izraz(node: Node):
     global global_call
     global adress_op_inc
     global is_op_inc
+    global global_loading_array
 
     name = '<postfiks_izraz>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
@@ -301,10 +318,15 @@ def postfiks_izraz(node: Node):
         return primarni_izraz(node.children[0])
 
     elif right == '<postfiks_izraz> L_UGL_ZAGRADA <izraz> D_UGL_ZAGRADA':
+        global_loading_array = True
         type_postfix, _ = postfiks_izraz(node.children[0])
         if 'array' not in type_postfix.value:
             terminate(name, node.children)
         type_izraz, _ = izraz(node.children[2])
+        frisc_function_definitions[data_table.function[0]] = f'\t\tLOAD R0, ({global_array_adress}_{global_array_adress_index})\n' \
+                                                             f'\t\tPUSH R0\n'
+
+        global_loading_array = False
         if not is_castable(type_izraz, Type.int):
             terminate(name, node.children)
         type_ = array_to_single(type_postfix)
@@ -887,7 +909,6 @@ def slozena_naredba(node: Node, function=None, params_types=None, params_names=N
 
     if function is not None:
         data_table.function = function
-        frisc_function_definitions[data_table.function[0]] += f'\t\tPUSH R5\n\t\tMOVE R7, R5\n'
     else:
         data_table.function = old_function
 
@@ -1297,6 +1318,8 @@ def init_deklarator(node: Node, inh_property):
 
 def izravni_deklarator(node: Node, inh_property):
     global global_name
+    global global_array_name
+    global global_array_is_OP_PRIDRUZI
     name = '<izravni_deklarator>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -1312,6 +1335,7 @@ def izravni_deklarator(node: Node, inh_property):
         return inh_property, None
 
     elif right == 'IDN L_UGL_ZAGRADA BROJ D_UGL_ZAGRADA':
+        # TODO: polje
         if inh_property == Type.void:
             terminate(name, node.children)
         if not (data_table.vars.get(node.children[0].data[2]) is None and
@@ -1320,6 +1344,14 @@ def izravni_deklarator(node: Node, inh_property):
         if not (0 < int(node.children[2].data[2]) <= 1024):
             terminate(name, node.children)
         data_table.vars[node.children[0].data[2]] = convert_to_array(inh_property)
+
+        array_count = int(node.children[2].data[2])
+        global_array_is_OP_PRIDRUZI = True
+        if data_table.parent is None:
+            global_array_name = f'G_{node.children[0].data[2]}'
+            for i in range(array_count):
+                frisc_global_variables[f'{global_array_name}_{i}'] = f'DW %D 0\n'
+
         return convert_to_array(inh_property), int(node.children[2].data[2])
 
     elif right == 'IDN L_ZAGRADA KR_VOID D_ZAGRADA':
@@ -1350,6 +1382,8 @@ def izravni_deklarator(node: Node, inh_property):
 
 
 def inicijalizator(node: Node):
+    global global_array_current_index
+    global global_array_name
     name = '<inicijalizator>'
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
@@ -1391,7 +1425,11 @@ def inicijalizator(node: Node):
         return type_, None
 
     elif right == 'L_VIT_ZAGRADA <lista_izraza_pridruzivanja> D_VIT_ZAGRADA':
-        return lista_izraza_pridruzivanja(node.children[1])
+        global_array_current_index = 0
+        res = lista_izraza_pridruzivanja(node.children[1])
+        global_array_current_index = 0
+        global_array_name = None
+        return res
 
     else:
         pass
@@ -1441,7 +1479,7 @@ for function_name, declaration_list in all_declarations.items():
 
 a.write('\n')
 for key, value in frisc_function_definitions.items():
-    a.write(f'F_{key} {value}')
+    a.write(f'F_{key}\t\tPUSH R5\n\t\tMOVE R7, R5\n{value}')
     a.write('\n')
 
 for key, value in frisc_global_variables.items():
