@@ -336,13 +336,14 @@ def postfiks_izraz(node: Node):
         if 'array' not in type_postfix.value:
             terminate(name, node.children)
         type_izraz, _ = izraz(node.children[2])
-        if not inner_is_OP_PRIDRUZI:
+        if not inner_is_OP_PRIDRUZI and global_array_adress is not None:
             frisc_function_definitions[data_table.function[0]] += f'\t\tLOAD R0, ({global_array_adress}_{global_array_adress_index})\n' \
                                                              f'\t\tPUSH R0\n'
         else:
-            global_array_adress_to_store = f'{global_array_adress}_{global_array_adress_index}'
-            global_store_string = f'\t\tPOP R0\n' \
-                                  f'\t\tSTORE R0, ({global_array_adress_to_store})\n'
+            if global_array_adress is not None:
+                global_array_adress_to_store = f'{global_array_adress}_{global_array_adress_index}'
+                global_store_string = f'\t\tPOP R0\n' \
+                                      f'\t\tSTORE R0, ({global_array_adress_to_store})\n'
 
         global_loading_array = False
         if not is_castable(type_izraz, Type.int):
@@ -1118,6 +1119,12 @@ def naredba_skoka(node: Node):
         function = data_table.function
         if not (function is not None and function[2] == Type.void):
             terminate(name, node.children)
+
+        if data_table.function is not None:
+            frisc_function_definitions[data_table.function[0]] += \
+                f'\t\tMOVE R5, R7\n' \
+                f'\t\tPOP R5\n' \
+                f'\t\tRET\n'
         return
 
     elif right == 'KR_RETURN <izraz> TOCKAZAREZ':
@@ -1504,6 +1511,5 @@ for key, value in frisc_global_variables.items():
     a.write(f'{key} {value}')
 a.close()
 
-# for i in range(2):
-#     print(global_data_table.vars)
-#     global_data_table = global_data_table.children[0]
+# for j in global_data_table.children:
+#     print(global_data_table.function)
