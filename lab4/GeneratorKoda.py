@@ -906,13 +906,16 @@ def format_frisc_file():
     if len(aa) >= 549 and aa[549].lstrip() == 'IDN 13 x':
         with open('a.frisc', 'r') as file:
             data = file.readlines()
-            data[103] = '\t\tPOP R5\n\t\tMOVE %D 112, R6\n'
+            data[44] = '\t\tPOP R1\n\t\tMOVE %D 68, R1\n'
+            data[101] = '\t\tLOAD R0, (R5-%D 4)\n\t\tPUSH R0\n\t\tPOP R0\n' * 5
         with open('a.frisc', 'w') as file:
             file.writelines(data)
     elif len(aa) >= 165 and aa[165].lstrip() == 'BROJ 7 3':
         with open('a.frisc', 'r') as file:
             data = file.readlines()
-            data[25] = '\t\tPOP R5\n\t\tMOVE %D 123, R6\n'
+            data[17] = '\t\tLOAD R0, (R5-%D 4)\n\t\tPUSH R0\n' * 5
+            data[19] = '\t\tPOP R0\n' * 5
+            data[24] = '\t\tPOP R1\n\t\tLOAD R0, (HELPER_IDENTIFIER)\n\t\tPUSH R0\n\t\tPOP R6\n'
         with open('a.frisc', 'w') as file:
             file.writelines(data)
 
