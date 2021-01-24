@@ -1100,7 +1100,7 @@ def naredba_petlje(node: Node):
     right = ' '.join([child.data[0] if child.is_terminal else child.data for child in node.children])
 
     if right == 'KR_WHILE L_ZAGRADA <izraz> D_ZAGRADA <naredba>':
-        frisc_function_definitions[data_table.function[0]] += f'{while_label}\n'
+        frisc_function_definitions[data_table.function[0]] += f'{while_label}\t\tADD R2, 0, R2\n'
         type_, _ = izraz(node.children[2])
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
@@ -1127,7 +1127,7 @@ def naredba_petlje(node: Node):
     elif right == 'KR_FOR L_ZAGRADA <izraz_naredba> <izraz_naredba> <izraz> D_ZAGRADA <naredba>':
         izraz_naredba(node.children[2])
 
-        frisc_function_definitions[data_table.function[0]] += f'{for_label}\n'
+        frisc_function_definitions[data_table.function[0]] += f'{for_label}\t\tADD R2, 0, R2\n'
 
         type_ = izraz_naredba(node.children[3])
         if not is_castable(type_, Type.int):
