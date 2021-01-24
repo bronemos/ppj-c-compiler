@@ -632,7 +632,7 @@ def odnosni_izraz(node: Node):
                                                                   f'\t\tJP {after_cmp}\n' \
                                                                   f'{cmp_label} MOVE 1, R0\n' \
                                                                   '\t\tPUSH R0\n' \
-                                                                  f'{after_cmp}\n'
+                                                                  f'{after_cmp}\t\tADD R2, 0, R2\n'
         elif right == '<odnosni_izraz> OP_GT <aditivni_izraz>':
             frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
                                                                   '\t\tPOP R0\n' \
@@ -643,7 +643,7 @@ def odnosni_izraz(node: Node):
                                                                   f'\t\tJP {after_cmp}\n' \
                                                                   f'{cmp_label} MOVE 1, R0\n' \
                                                                   '\t\tPUSH R0\n' \
-                                                                  f'{after_cmp}\n'
+                                                                  f'{after_cmp}\t\tADD R2, 0, R2\n'
 
         elif right == '<odnosni_izraz> OP_LTE <aditivni_izraz>':
             frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
@@ -655,7 +655,7 @@ def odnosni_izraz(node: Node):
                                                                   f'\t\tJP {after_cmp}\n' \
                                                                   f'{cmp_label} MOVE 1, R0\n' \
                                                                   '\t\tPUSH R0\n' \
-                                                                  f'{after_cmp}\n'
+                                                                  f'{after_cmp}\t\tADD R2, 0, R2\n'
 
         else:
             frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
@@ -667,7 +667,7 @@ def odnosni_izraz(node: Node):
                                                                   f'\t\tJP {after_cmp}\n' \
                                                                   f'{cmp_label} MOVE 1, R0\n' \
                                                                   '\t\tPUSH R0\n' \
-                                                                  f'{after_cmp}\n'
+                                                                  f'{after_cmp}\t\tADD R2, 0, R2\n'
 
         cmp_label += '1'
         after_cmp += '1'
@@ -707,7 +707,7 @@ def jednakosni_izraz(node: Node):
                                                                   f'\t\tJP {after_cmp}\n' \
                                                                   f'{cmp_label} MOVE 1, R0\n' \
                                                                   '\t\tPUSH R0\n' \
-                                                                  f'{after_cmp}\n'
+                                                                  f'{after_cmp}\t\tADD R2, 0, R2\n'
 
         else:
             frisc_function_definitions[data_table.function[0]] += '\t\tPOP R1\n' \
@@ -719,7 +719,7 @@ def jednakosni_izraz(node: Node):
                                                                   f'\t\tJP {after_cmp}\n' \
                                                                   f'{cmp_label} MOVE 0, R0\n' \
                                                                   '\t\tPUSH R0\n' \
-                                                                  f'{after_cmp}\n'
+                                                                  f'{after_cmp}\t\tADD R2, 0, R2\n'
         cmp_label += '1'
         after_cmp += '1'
 
@@ -820,7 +820,7 @@ def log_i_izraz(node: Node):
                 data_table.function[0]] += f'\t\tPOP R0\n' \
                                            f'\t\tPUSH R0\n' \
                                            f'\t\tCMP R0, 0\n' \
-                                           f'\t\tJP_EQ {old_after_and}\n'
+                                           f'\t\tJP_EQ {old_after_and}\t\tADD R2, 0, R2\n'
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
         type_, _ = bin_ili_izraz(node.children[2])
@@ -832,7 +832,7 @@ def log_i_izraz(node: Node):
                                            f'\t\tPOP R0\n' \
                                            f'\t\tAND R0, R1, R0\n' \
                                            f'\t\tPUSH R0\n' \
-                                           f'{old_after_and}\n'
+                                           f'{old_after_and}\t\tADD R2, 0, R2\n'
         return Type.int, False
 
     else:
@@ -869,7 +869,7 @@ def log_ili_izraz(node: Node):
                                            f'\t\tPOP R0\n' \
                                            f'\t\tOR R0, R1, R0\n' \
                                            f'\t\tPUSH R0\n' \
-                                           f'{old_after_or}\n'
+                                           f'{old_after_or}\t\tADD R2, 0, R2\n'
         return Type.int, False
 
     else:
