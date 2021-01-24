@@ -820,7 +820,7 @@ def log_i_izraz(node: Node):
                 data_table.function[0]] += f'\t\tPOP R0\n' \
                                            f'\t\tPUSH R0\n' \
                                            f'\t\tCMP R0, 0\n' \
-                                           f'\t\tJP_EQ {old_after_and}\t\tADD R2, 0, R2\n'
+                                           f'\t\tJP_EQ {old_after_and}\n'
         if not is_castable(type_, Type.int):
             terminate(name, node.children)
         type_, _ = bin_ili_izraz(node.children[2])
